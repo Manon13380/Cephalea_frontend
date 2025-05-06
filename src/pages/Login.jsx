@@ -5,6 +5,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import api from "../api/axios";
+import toastr from "toastr";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -29,6 +30,12 @@ const Login = () => {
       if (error.response) {
         // Erreur de l'API (4xx ou 5xx)
         console.error("Erreur API :", error.response.data);
+        if (error.response.status === 401) {
+          // Erreur de mauvais identifiants
+          toastr.error("Nom d'utilisateur ou mot de passe incorrect.");
+        } else {
+          toastr.error("Une erreur est survenue. Veuillez réessayer.");
+        }
       } else if (error.request) {
         // Pas de réponse
         console.error("Pas de réponse du serveur :", error.request);
