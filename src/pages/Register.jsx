@@ -58,7 +58,7 @@ const Register = () => {
         confirmPassword: formData.confirmPassword
       });
 
-      console.log("Inscription réussie :", response.data);
+  
       toastr.success("Inscription réussie !");
       navigate("/");
 

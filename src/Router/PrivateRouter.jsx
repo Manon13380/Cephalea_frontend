@@ -14,7 +14,6 @@ const PrivateRouter = () => {
 
     
 const token = sessionStorage.getItem("token")
-console.log("token" ,token)
 
 return token  && !isTokenExpired(token) ? <Outlet /> : <Navigate to="/" />;
 }

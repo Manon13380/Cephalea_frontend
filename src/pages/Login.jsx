@@ -20,10 +20,8 @@ const Login = () => {
         email,
         password,
       });
-  
-      console.log("Connexion réussie :", response.data);
       sessionStorage.setItem("token", response.data);
-      sessionStorage.setItem("justLoggedIn", "true");
+      sessionStorage.setItem('justConnected', 'true');
       navigate("/home");
 
   

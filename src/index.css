@@ -74,3 +74,16 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+#popup {
+  box-shadow: 0px -4px 6px rgba(0, 0, 0, 0.3);
+  animation: popUpAnimation 2.5s ease-out forwards;
+}
+@keyframes popUpAnimation {
+  0% {
+    bottom: -300px; /* Départ en bas */
+  }
+  100% {
+    bottom: 0rem; /* Position finale, tu peux ajuster selon ton besoin */
+  }
+}
