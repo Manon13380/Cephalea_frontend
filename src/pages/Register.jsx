@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import LogoCephalea from '../assets/Logo_cephalea.png';
+import LogoCephalea from '../assets/images/Logo_cephalea.png';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import InputField from "../components/InputField";
 import Button from "../components/Button";
