@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import PrivateLayout from '../components/PrivateLayout';
+import PopUp from '../components/PopUp';
 import { jwtDecode } from "jwt-decode";
 
 const Home = () => {
@@ -14,9 +15,7 @@ const Home = () => {
     if (justConnected && token) {
       const decodedToken = jwtDecode(token);
       const userFirstName = decodedToken.firstName;
-
       setFirstName(userFirstName);
-
       setShowPopup(true);
       sessionStorage.removeItem('justConnected');
 
@@ -24,12 +23,8 @@ const Home = () => {
     }
   }, []);
 
-  const handleClose = () => {
-    setShowPopup(false); 
-  };
-
   return (
-    <PrivateLayout  showPopup={showPopup}>
+    <PrivateLayout  showPopup={showPopup} >
       <div className="text-center"> {/* Contenu supplémentaire pour simuler une page longue */}
         <h1>Test du footer avec du contenu supplémentaire</h1>
         <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. <br />
@@ -90,18 +85,7 @@ const Home = () => {
           Etiam id nisi sed mauris rut
         </p>
         {showPopup && (
-          <div id="popup" className="fixed bottom-0 left-1/2 transform -translate-x-1/2  bg-teal-500 text-gray-300 px-6 py-4 rounded-t-lg shadow-lg transition-all duration-500 z-50 w-[100%] max-w-[1024px] h-[300px]" >
-            <p className='text-4xl font-bold'>Bonjour <span className="font-italiana text-3xl font-normal">{firstName}</span></p>
-            <p className='mt-5'>Souhaites-tu enregistrer une <br /> crise de migraine ?</p>
-            <div className="flex flex-col space-y-4 mt-6 items-center">
-              <button className="border-none hover:border-none bg-gray-800 focus:outline-none w-[70px]">
-                Oui
-              </button>
-              <button className="border-none hover:border-none bg-gray-800 focus:outline-none w-[70px]" onClick={handleClose}>
-                Non
-              </button>
-            </div>
-          </div>
+        <PopUp firstName={firstName} setShowPopup={setShowPopup} />
         )}
       </div>
     </PrivateLayout>

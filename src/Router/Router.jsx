@@ -3,6 +3,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Home from "../pages/Home";
 import PrivateRouter from "./PrivateRouter";
+import CrisisForm from "../pages/CrisisForm";
 
 
 const Router = () => {
@@ -13,6 +14,7 @@ const Router = () => {
                 <Route path="/register" element={<Register />} />
                 <Route element={<PrivateRouter />}>
                     <Route path="/home" element={<Home />} />
+                    <Route path="/crisis-form" element={<CrisisForm />} />
                 </Route>
             </Routes>
         </>
