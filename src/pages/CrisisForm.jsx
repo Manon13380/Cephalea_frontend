@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import InputField from '../components/InputField';
 import Button from '../components/Button';
 import toastr from 'toastr';
 import PrivateLayout from '../components/PrivateLayout';
 import api from "../api/axios";
+import { getLocalDateTimeString } from '../utils/dateTimeUtils';
+import { useNavigate } from 'react-router-dom';
+
 
 
 const CrisisForm = () => {
     const [startDate, setStartDate] = useState('');
     const [painIntensity, setPainIntensity] = useState('');
     const token = sessionStorage.getItem("token");
+     const navigate = useNavigate(); 
 
     const handleSubmit = async(e) => {
         e.preventDefault();
         try {
-            console.log("Crise en cours d'enregistrement...");
+
             const response = await api.post(`/crisis?painIntensity=${painIntensity}`, {
                 startDate
               }, {
@@ -51,7 +55,7 @@ const CrisisForm = () => {
                         onChange={(e) => setStartDate(e.target.value)}
                         placeholder="Date de début"
                         required
-                        max={new Date().toISOString().slice(0, 16)}
+                        max={getLocalDateTimeString()}
                     />
                     <label htmlFor="painIntensity" className='block text-center '>Intensité actuelle <br /> de la douleur (0-10) :</label>
                     <select

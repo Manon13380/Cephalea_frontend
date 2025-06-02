@@ -1,4 +1,4 @@
-import Router from "./Router/Router";
+import Router from "./router/Router";
 import { BrowserRouter } from "react-router-dom";
 import './App.css'
 import 'toastr/build/toastr.min.css';
