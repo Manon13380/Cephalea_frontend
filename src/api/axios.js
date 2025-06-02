@@ -10,7 +10,7 @@ api.interceptors.request.use(
     const token = sessionStorage.getItem("token");
 
     // Si le token existe, l'ajouter aux en-têtes
-    if (token) {
+    if (token && !config.url.startsWith('/auth')) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
 
