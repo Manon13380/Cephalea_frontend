@@ -3,22 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import PrivateLayout from '../components/PrivateLayout';
 import api from "../api/axios";
 import toastr from 'toastr';
+import { useApi } from '../hooks/useApi';
 
 const CrisisList = () => {
     const [crises, setCrises] = useState([]);
-    const token = sessionStorage.getItem("token");
+    const { loading, error, get } = useApi();
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchCrises = async () => {
             try {
-                const response = await api.get('/crisis', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const sortedCrises = response.data.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+                const response = await get('/crisis');
+                const sortedCrises = response.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
                 setCrises(sortedCrises);
             } catch (error) {
                 console.error("Erreur lors de la récupération des crises :", error);
@@ -27,7 +23,7 @@ const CrisisList = () => {
         };
 
         fetchCrises();
-    }, [token]);
+    }, [get]);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -45,6 +41,17 @@ const CrisisList = () => {
         if (intensity <= 6) return 'bg-orange-500';
         return 'bg-red-500';
     };
+
+     if (loading) {
+            return (
+                <PrivateLayout>
+                    <div className="flex justify-center items-center h-64">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+                    </div>
+                </PrivateLayout>
+            );
+        }
+    
 
     return (
         <PrivateLayout>

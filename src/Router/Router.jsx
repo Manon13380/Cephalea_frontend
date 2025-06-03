@@ -6,6 +6,8 @@ import PrivateRouter from "./PrivateRouter";
 import CrisisForm from "../pages/CrisisForm";
 import CrisisList from "../pages/CrisisList";
 import CrisisDetails from "../pages/CrisisDetails";
+import TreatmentsPage from "../pages/TreatmentsPage";
+import AddTreatmentForm from '../pages/AddTreatmentForm';
 
 const Router = () => {
     return (
@@ -18,6 +20,8 @@ const Router = () => {
                     <Route path="/crisis-form" element={<CrisisForm />} />
                     <Route path="/crisis-list" element={<CrisisList />} />
                     <Route path="/crisis/:id" element={<CrisisDetails />} />
+                    <Route path="/treatments" element={<TreatmentsPage />} />
+                    <Route path="/add-treatment" element={<AddTreatmentForm />} />
                 </Route>
             </Routes>
         </>

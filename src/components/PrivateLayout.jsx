@@ -29,7 +29,7 @@ const PrivateLayout = ({ children, showPopup}) => {
         // Rediriger vers la page de connexion
         navigate('/');
     };
-
+    
     return (
         <div className="min-h-screen w-screen bg-gradient-to-b from-[#368A7B] to-black flex flex-col">
             {/* Overlay */}
@@ -46,7 +46,7 @@ const PrivateLayout = ({ children, showPopup}) => {
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             className="flex items-center space-x-1 bg-transparent border-none outline-none text-gray-400 hover:text-gray-200 focus:outline-none transition-colors"
                         >
-                            <FiSettings size={24} />
+                        <FiSettings size={24} />
                             <FiChevronDown size={16} className={`transition-transform ${isMenuOpen ? 'transform rotate-180' : ''}`} />
                         </button>
                         
@@ -54,7 +54,7 @@ const PrivateLayout = ({ children, showPopup}) => {
                             <div className="absolute right-0 mt-2 w-48 bg-[#2A2A2A] rounded-md shadow-lg py-1 z-50">
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full text-left px-4 py-2 text-gray-300 hover:bg-[#3A3A3A] flex items-center space-x-2"
+                                    className="block px-4 py-2 text-gray-300 hover:text-[#368A7B] hover:bg-[#3A3A3A] hover:border-none bg-transparent flex items-center space-x-2 no-underline w-full text-left"
                                 >
                                     <FiLogOut size={16} />
                                     <span>Déconnexion</span>
@@ -81,9 +81,11 @@ const PrivateLayout = ({ children, showPopup}) => {
                                 <FaHome size={24} />
                             </button>
                         </Link>
-                        <button className="bg-transparent border-none outline-none text-teal-400 hover:text-teal-300 cursor-pointer focus:outline-none">
-                            <FaPills size={24} />
-                        </button>
+                        <Link to="/treatments">
+                            <button className={`bg-transparent border-none outline-none ${location.pathname === '/treatments' ? 'text-white' : 'text-teal-400'} hover:text-teal-300 cursor-pointer focus:outline-none`}>
+                                <FaPills size={24} />
+                            </button>
+                        </Link>
                     </div>
 
                     {/* Icône centrale */}
