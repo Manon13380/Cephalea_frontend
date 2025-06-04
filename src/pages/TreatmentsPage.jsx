@@ -38,7 +38,10 @@ const TreatmentsPage = () => {
     };
 
     const handleEdit = (id) => {
-        navigate(`/edit-treatment/${id}`);
+        const medication = medications.find(m => m.id === id);
+        if (medication) {
+            navigate('/add-treatment', { state: { ...medication, isEdit: true } });
+        }
     };
 
     useEffect(() => {
@@ -46,7 +49,6 @@ const TreatmentsPage = () => {
             try {
                 const data = await get('/medications');
                 setMedications(data);
-                console.log(data);
             } catch (err) {
                 console.error('Erreur:', err);
                 toast.error("Une erreur est survenue lors de la récupération des médicaments");

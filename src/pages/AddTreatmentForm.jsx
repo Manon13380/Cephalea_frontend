@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FiArrowLeft, FiSave } from 'react-icons/fi';
 import PrivateLayout from '../components/PrivateLayout';
 import { useApi } from '../hooks/useApi';
@@ -15,21 +15,29 @@ const PERIOD_OPTIONS = [
 
 const AddTreatmentForm = () => {
     const navigate = useNavigate();
-    const { post, loading } = useApi();
+    const location = useLocation();
+    const { loading, error, post: create,  update } = useApi();
     const [formData, setFormData] = useState({
         name: '',
         dosage: '',
         quantity: '',
-        periodQuantity: null,
+        periodQuantity: location.state?.periodQuantity || null,
         duration: '',
-        periodDuration: null,
+        periodDuration: location.state?.periodDuration || null,
         interval: '',
         maximum: '',
-        periodMaximum: null,
+        periodMaximum: location.state?.periodMaximum || null,
         isAlarm: false,
         isTreatment: true,
         isDelete: false
     });
+
+    useEffect(() => {
+        if (location.state?.isEdit) {
+            setFormData(location.state);
+            console.log(location.state);
+        }
+    }, [location.state]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -42,12 +50,24 @@ const AddTreatmentForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await post('/medications', formData);
-            toastr.success('Traitement ajouté avec succès');
+            if (location.state?.isEdit) {
+                await update(`/medications/${location.state.id}`, formData);
+                toastr.success('Traitement mis à jour avec succès');
+            } else {
+                await create('/medications', formData);
+                toastr.success('Traitement ajouté avec succès');
+            }
             navigate('/treatments');
         } catch (error) {
-            console.error('Erreur lors de l\'ajout du traitement :', error);
-            toastr.error(error.message || 'Une erreur est survenue lors de l\'ajout du traitement');
+            
+            
+            if (location.state?.isEdit) {
+                console.log(error);
+                toastr.error('Une erreur est survenue lors de la mise à jour du traitement');
+            } else {
+                console.log(error);
+                toastr.error(error.message || 'Une erreur est survenue lors de l\'ajout du traitement');
+            }
         }
     };
 
@@ -55,7 +75,7 @@ const AddTreatmentForm = () => {
         <PrivateLayout>
             <div className="max-w-4xl mx-auto py-6 px-2 sm:px-6 lg:px-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-white">Ajouter un traitement</h1>
+                    <h1 className="text-3xl font-bold text-white">{location.state?.isEdit ? 'Modifier un traitement' : 'Ajouter un traitement'}</h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -241,7 +261,7 @@ const AddTreatmentForm = () => {
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+                    <div className="flex justify-end gap-4">
                         <button
                             type="button"
                             onClick={() => navigate('/treatments')}

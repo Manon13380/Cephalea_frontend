@@ -30,7 +30,7 @@ export const useApi = () => {
         error,
         get: useCallback((url) => request('get', url), [request]),
         post: useCallback((url, data) => request('post', url, data), [request]),
-        put: useCallback((url, data) => request('put', url, data), [request]),
+        update: useCallback((url, data) => request('patch', url, data), [request]),
         remove: useCallback((url) => request('delete', url), [request]),
     };
 };
