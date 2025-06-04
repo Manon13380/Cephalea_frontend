@@ -31,7 +31,7 @@ export const useApi = () => {
         get: useCallback((url) => request('get', url), [request]),
         post: useCallback((url, data) => request('post', url, data), [request]),
         put: useCallback((url, data) => request('put', url, data), [request]),
-        delete: useCallback((url) => request('delete', url), [request]),
+        remove: useCallback((url) => request('delete', url), [request]),
     };
 };
 

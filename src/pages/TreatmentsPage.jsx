@@ -1,28 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus } from 'react-icons/fi';
-import { FaPills } from 'react-icons/fa';
+import { FiPlus, FiMaximize2, FiEdit3, FiTrash2 } from 'react-icons/fi';
+import { FaPills, FaHourglass, FaCalendarAlt } from 'react-icons/fa';
 import PrivateLayout from '../components/PrivateLayout';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { toast } from 'react-toastify';
+import DeleteDialog from '../components/DeleteDialog';
+
+
 
 const TreatmentsPage = () => {
     const navigate = useNavigate();
     const [medications, setMedications] = useState([]);
-    const { loading, error, get } = useApi();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [selectedMedicationId, setSelectedMedicationId] = useState(null);
+    const [selectedMedicationName, setSelectedMedicationName] = useState('');
+    const { loading, error, get, remove } = useApi();
+
+    const handleDelete = async (id, medicationName) => {
+        setSelectedMedicationId(id);
+        setSelectedMedicationName(medicationName);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await remove(`/medications/${selectedMedicationId}`);
+            const updatedMedications = medications.filter(m => m.id !== selectedMedicationId);
+            setMedications(updatedMedications);
+            toast.success('Médicament supprimé avec succès');
+            setIsDeleteDialogOpen(false);
+        } catch (error) {
+            console.error('Erreur lors de la suppression :', error);
+            toast.error('Une erreur est survenue lors de la suppression');
+            setIsDeleteDialogOpen(false);
+        }
+    };
+
+    const handleEdit = (id) => {
+        navigate(`/edit-treatment/${id}`);
+    };
 
     useEffect(() => {
         const fetchMedications = async () => {
             try {
                 const data = await get('/medications');
                 setMedications(data);
+                console.log(data);
             } catch (err) {
                 console.error('Erreur:', err);
-                toastr.error("Une erreur est survenue lors de la récupération des médicaments");
+                toast.error("Une erreur est survenue lors de la récupération des médicaments");
             }
         };
 
         fetchMedications();
-    }, [get]);
+    }, []);
+
+    const ICONS = {
+        dosage: <FaPills className="w-4 h-4" />,
+        quantity: <FaPills className="w-4 h-4" />,
+        duration: <FaCalendarAlt className="w-4 h-4" />,
+        interval: <FaHourglass className="w-4 h-4" />,
+        maximum: <FiMaximize2 className="w-4 h-4" />
+    };
 
     if (loading) {
         return (
@@ -34,10 +74,25 @@ const TreatmentsPage = () => {
         );
     }
 
+    if (error) {
+        return (
+            <PrivateLayout>
+                <div className="flex justify-center items-center h-64">
+                    <div className="text-red-400">Erreur lors du chargement des médicaments</div>
+                </div>
+            </PrivateLayout>
+        );
+    }
 
     return (
         <PrivateLayout>
             <div className="max-w-4xl mx-auto py-8 px-4"> 
+                <DeleteDialog
+                    isOpen={isDeleteDialogOpen}
+                    onClose={() => setIsDeleteDialogOpen(false)}
+                    onConfirm={confirmDelete}
+                    medicationName={selectedMedicationName}
+                />
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-white mb-4">Mes traitements</h1>
                     <button 
@@ -49,32 +104,83 @@ const TreatmentsPage = () => {
                     </button>
                 </div>
 
-
                 {medications.length > 0 ? (
                     <div className="grid gap-4">
                         {medications.map((medication) => (
                             <div 
                                 key={medication.id} 
-                                className="bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-colors"
+                                className="bg-white/5 p-6 rounded-xl border border-white/10 relative"
                             >
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <h3 className="text-xl font-semibold text-white">{medication.name}</h3>
+                                <div className="absolute top-4 right-4 flex gap-4">
+                                    <button 
+                                        onClick={() => handleEdit(medication.id)}
+                                        className="p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                        title="Modifier"
+                                    >
+                                        <FiEdit3 className="w-5 h-5 text-white/70 hover:text-white" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(medication.id, medication.name)}
+                                        className="p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                        title="Supprimer"
+                                    >
+                                        <FiTrash2 className="w-5 h-5 text-white/70 hover:text-white" />
+                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-semibold text-white">{medication.name}</h3>
+                                    <div className="flex flex-wrap gap-4 text-gray-300">
                                         {medication.dosage && (
-                                            <p className="text-gray-300">Dosage: {medication.dosage}</p>
+                                            <div className="flex items-center gap-2 bg-white/5 p-3 rounded-lg">
+                                                <div className="flex items-center gap-1">
+                                                    {ICONS.dosage}
+                                                    <span className="text-sm">Dosage:</span>
+                                                </div>
+                                                <span className="font-medium">{medication.dosage}</span>
+                                            </div>
                                         )}
                                         {medication.quantity && (
-                                            <p className="text-gray-300">
-                                                {medication.quantity} {medication.periodQuantity?.toLowerCase()}
-                                            </p>
+                                            <div className="flex items-center gap-2 bg-white/5 p-3 rounded-lg">
+                                                <div className="flex items-center gap-1">
+                                                    {ICONS.quantity}
+                                                    <span className="text-sm">Quantité:</span>
+                                                </div>
+                                                <span className="font-medium">{medication.quantity}</span>
+                                                <span className="text-sm">/{medication.periodQuantity.toLowerCase()}</span>
+                                            </div>
+                                        )}
+                                        
+                                        {medication.duration && (
+                                            <div className="flex items-center gap-2 bg-white/5 p-3 rounded-lg">
+                                                <div className="flex items-center gap-1">
+                                                    {ICONS.duration}
+                                                    <span className="text-sm">Durée:</span>
+                                                </div>
+                                                <span className="font-medium">{medication.duration}</span>
+                                                <span className="text-sm">{medication.periodDuration.toLowerCase()}</span>
+                                            </div>
+                                        )}
+                                        {medication.interval && (
+                                            <div className="flex items-center gap-2 bg-white/5 p-3 rounded-lg">
+                                                <div className="flex items-center gap-1">
+                                                    {ICONS.interval}
+                                                    <span className="text-sm">Intervalle:</span>
+                                                </div>
+                                                <span className="font-medium">{medication.interval}</span>
+                                                <span className="text-sm">heures</span>
+                                            </div>
+                                        )}
+                                        {medication.maximum && (
+                                            <div className="flex items-center gap-2 bg-white/5 p-3 rounded-lg">
+                                                <div className="flex items-center gap-1">
+                                                    {ICONS.maximum}
+                                                    <span className="text-sm">Max:</span>
+                                                </div>
+                                                <span className="font-medium">{medication.maximum}</span>
+                                                <span className="text-sm">/{medication.periodMaximum.toLowerCase()}</span>
+                                            </div>
                                         )}
                                     </div>
-                                    <button 
-                                        className="text-gray-400 hover:text-teal-400 transition-colors"
-                                        onClick={() => {/* Gérer le clic sur le bouton */}}
-                                    >
-                                        <FaPills size={24} />
-                                    </button>
                                 </div>
                             </div>
                         ))}
