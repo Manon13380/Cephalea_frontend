@@ -113,7 +113,7 @@ const TreatmentsPage = () => {
                                 key={medication.id} 
                                 className="bg-white/5 p-6 rounded-xl border border-white/10 relative"
                             >
-                                <div className="absolute top-4 right-4 flex gap-4">
+                                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-2 sm:gap-4">
                                     <button 
                                         onClick={() => handleEdit(medication.id)}
                                         className="p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
@@ -129,7 +129,7 @@ const TreatmentsPage = () => {
                                         <FiTrash2 className="w-5 h-5 text-white/70 hover:text-white" />
                                     </button>
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 mt-6 sm:mt-0">
                                     <h3 className="text-xl font-semibold text-white">{medication.name}</h3>
                                     <div className="flex flex-wrap gap-4 text-gray-300">
                                         {medication.dosage && (

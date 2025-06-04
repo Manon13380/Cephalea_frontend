@@ -261,11 +261,11 @@ const AddTreatmentForm = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-4">
+                    <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
                         <button
                             type="button"
                             onClick={() => navigate('/treatments')}
-                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-md text-white hover:bg-white/10 transition-colors flex items-center justify-center space-x-2"
+                            className="w-full sm:w-auto px-4 py-2 bg-white/5 border border-white/10 rounded-md text-white hover:bg-white/10 transition-colors flex items-center justify-center space-x-2"
                         >
                             <FiArrowLeft className="h-5 w-5" />
                             <span>Annuler</span>
@@ -273,7 +273,7 @@ const AddTreatmentForm = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`px-4 py-2 rounded-md text-white flex items-center justify-center space-x-2 ${
+                            className={`w-full sm:w-auto px-4 py-2 rounded-md text-white flex items-center justify-center space-x-2 ${
                                 loading
                                     ? 'bg-teal-500/50 cursor-not-allowed'
                                     : 'bg-teal-500 hover:bg-teal-600 transition-colors'
@@ -287,7 +287,7 @@ const AddTreatmentForm = () => {
                             ) : (
                                 <>
                                     <FiSave className="h-5 w-5" />
-                                    <span>Enregistrer</span>
+                                    <span>{location.state?.isEdit ? 'Sauvegarder' : 'Enregistrer'}</span>
                                 </>
                             )}
                         </button>
