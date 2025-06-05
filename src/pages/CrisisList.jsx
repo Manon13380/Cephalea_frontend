@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiTrash2 } from 'react-icons/fi';
+import { FiTrash2, FiCheckSquare } from 'react-icons/fi';
 import PrivateLayout from '../components/PrivateLayout';
 import DeleteDialog from '../components/DeleteDialog';
+import TerminateCrisisDialog from '../components/TerminateCrisisDialog';
 import toastr from 'toastr';
 import { useApi } from '../hooks/useApi';
 
 const CrisisList = () => {
     const [crises, setCrises] = useState([]);
-    const { loading, error, get, remove } = useApi();
+    const { loading, error, get, remove, update } = useApi();
     const navigate = useNavigate();
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCrisisId, setSelectedCrisisId] = useState(null);
     const [selectedCrisisInfo, setSelectedCrisisInfo] = useState('');
+
+    const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
+    const [selectedCrisisToTerminate, setSelectedCrisisToTerminate] = useState(null);
+
     const currentYear = new Date().getFullYear().toString();
     const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
     const [openSections, setOpenSections] = useState({});
@@ -66,8 +71,6 @@ const CrisisList = () => {
         }, {});
     };
 
-  
-
     useEffect(() => {
         if (crises.length > 0) {
             const grouped = groupCrisesByYearAndMonth(crises);
@@ -119,21 +122,37 @@ const CrisisList = () => {
         }
     };
 
+    const handleOpenTerminateModal = (crisis) => {
+        setSelectedCrisisToTerminate({ id: crisis.id, startDate: crisis.startDate, formattedStartDate: formatDate(crisis.startDate).split(' ')[0] });
+        setIsTerminateModalOpen(true);
+    };
+
+    const handleConfirmTerminate = async (endDate) => {
+        if (!selectedCrisisToTerminate || !endDate) return;
+
+        try {
+            const payload = { endDate: new Date(endDate).toISOString() };
+            await update(`/crisis/${selectedCrisisToTerminate.id}`, payload);
+            
+            toastr.success("Crise terminée avec succès !");
+            setCrises(prevCrises => 
+                prevCrises.map(c => 
+                    c.id === selectedCrisisToTerminate.id ? { ...c, endDate: payload.endDate } : c
+                )
+            );
+            setIsTerminateModalOpen(false);
+            setSelectedCrisisToTerminate(null);
+        } catch (err) {
+            console.error("Erreur lors de la mise à jour de la crise :", err);
+            toastr.error(err.response?.data?.message || "Une erreur est survenue lors de la mise à jour de la crise.");
+        }
+    };
+
     if (loading) {
         return (
             <PrivateLayout>
                 <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-                </div>
-            </PrivateLayout>
-        );
-    }
-
-    if (error) {
-        return (
-            <PrivateLayout>
-                <div className="text-center text-red-500 py-8">
-                    Erreur lors du chargement des crises. Veuillez réessayer.
                 </div>
             </PrivateLayout>
         );
@@ -146,6 +165,16 @@ const CrisisList = () => {
                 onClose={() => setIsDeleteDialogOpen(false)}
                 onConfirm={confirmActualDelete}
                 info={selectedCrisisInfo} 
+            />
+            <TerminateCrisisDialog
+                isOpen={isTerminateModalOpen}
+                onClose={() => {
+                    setIsTerminateModalOpen(false);
+                    setSelectedCrisisToTerminate(null);
+                }}
+                onConfirm={handleConfirmTerminate}
+                crisisInfo={selectedCrisisToTerminate ? `Terminer la crise du ${selectedCrisisToTerminate.formattedStartDate}` : ''}
+                crisisStartDate={selectedCrisisToTerminate ? selectedCrisisToTerminate.startDate : null}
             />
             <div className="w-full max-w-4xl mx-auto py-8">
                 <h1 className="text-3xl font-bold text-white mb-8 text-center">Historique des crises</h1>
@@ -162,7 +191,6 @@ const CrisisList = () => {
                                 const monthName = monthDate.toLocaleString('fr-FR', { month: 'long' });
 
                                 return (
-                                    
                                     <div key={`${year}-${month}`} className="mb-4">
                                         <button
                                             onClick={() => toggleSection(year, month)}
@@ -176,14 +204,14 @@ const CrisisList = () => {
                                                 {crisesInMonth.map((crise) => (
                                                     <div
                                                         key={crise.id}
-                                                        className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors flex items-center justify-between"
+                                                        className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors flex items-center justify-between relative"
                                                     >
                                                         <div 
-                                                            className="flex-grow cursor-pointer pr-4" 
+                                                            className="flex-grow cursor-pointer" 
                                                             onClick={() => navigate(`/crisis/${crise.id}`)} 
                                                         >
                                                             <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
-                                                                <div className={`h-16 w-16 rounded-full ${getIntensityColor(crise.intensities.sort((a, b) => new Date(a.date) - new Date(b.date))[0].number)} flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0`}>
+                                                                <div className={`h-16 w-16 mt-10 rounded-full ${getIntensityColor(crise.intensities.sort((a, b) => new Date(a.date) - new Date(b.date))[0].number)} flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0`}>
                                                                     {crise.intensities && crise.intensities.length > 0 && (
                                                                         <span className="text-2xl font-bold text-white">
                                                                             {crise.intensities.sort((a, b) => new Date(a.date) - new Date(b.date))[0].number}
@@ -191,7 +219,7 @@ const CrisisList = () => {
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1 w-full">
-                                                                    <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center mb-3">
+                                                                    <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center mb-1">
                                                                         <p className="text-white text-lg font-medium">
                                                                             {formatDate(crise.startDate)}
                                                                         </p>
@@ -201,6 +229,13 @@ const CrisisList = () => {
                                                                             </p>
                                                                         )}
                                                                     </div>
+                                                                    <p className="text-sm text-white/70 mb-3 text-center sm:text-left">
+                                                                        {crise.endDate ? (
+                                                                            `Terminée le ${formatDate(crise.endDate)}`
+                                                                        ) : (
+                                                                            <span className="text-yellow-400 font-semibold">En cours</span>
+                                                                        )}
+                                                                    </p>
                                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-x-8 sm:gap-y-2 text-sm">
                                                                         <div className="flex items-center justify-between sm:justify-start sm:space-x-2">
                                                                             <span className="text-white/60">Médicaments :</span>
@@ -222,7 +257,19 @@ const CrisisList = () => {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex-shrink-0">
+                                                        <div className="absolute top-2 right-2 flex flex-row gap-2 sm:relative sm:top-auto sm:right-auto sm:flex-shrink-0">
+                                                            {!crise.endDate && (
+                                                                <button 
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleOpenTerminateModal(crise);
+                                                                    }}
+                                                                    className="p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                                                    title="Terminer cette crise"
+                                                                >
+                                                                    <FiCheckSquare className="w-5 h-5 text-white/70 hover:text-white" />
+                                                                </button>
+                                                            )}
                                                             <button 
                                                                 onClick={(e) => {
                                                                     e.stopPropagation(); 

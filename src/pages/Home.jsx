@@ -23,6 +23,10 @@ const Home = () => {
     }
   }, []);
 
+  const handleClosePopup = () => {
+    setShowPopup(false);
+  };
+
   return (
     <PrivateLayout  showPopup={showPopup} >
       <div className="text-center"> {/* Contenu supplémentaire pour simuler une page longue */}
@@ -85,7 +89,7 @@ const Home = () => {
           Etiam id nisi sed mauris rut
         </p>
         {showPopup && (
-        <PopUp firstName={firstName} setShowPopup={setShowPopup} />
+        <PopUp firstName={firstName} onClose={handleClosePopup} />
         )}
       </div>
     </PrivateLayout>
