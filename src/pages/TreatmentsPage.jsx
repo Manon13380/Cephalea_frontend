@@ -19,7 +19,7 @@ const TreatmentsPage = () => {
 
     const handleDelete = async (id, medicationName) => {
         setSelectedMedicationId(id);
-        setSelectedMedicationName(medicationName);
+        setSelectedMedicationName("le médicament " + medicationName);
         setIsDeleteDialogOpen(true);
     };
 
@@ -93,7 +93,7 @@ const TreatmentsPage = () => {
                     isOpen={isDeleteDialogOpen}
                     onClose={() => setIsDeleteDialogOpen(false)}
                     onConfirm={confirmDelete}
-                    medicationName={selectedMedicationName}
+                    info={selectedMedicationName}
                 />
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-white mb-4">Mes traitements</h1>
@@ -159,7 +159,7 @@ const TreatmentsPage = () => {
                                                     <span className="text-sm">Durée:</span>
                                                 </div>
                                                 <span className="font-medium">{medication.duration}</span>
-                                                <span className="text-sm">{medication.periodDuration.toLowerCase()}</span>
+                                                <span className="text-sm">{medication.periodDuration.toLowerCase()}(s)</span>
                                             </div>
                                         )}
                                         {medication.interval && (
@@ -169,7 +169,7 @@ const TreatmentsPage = () => {
                                                     <span className="text-sm">Intervalle:</span>
                                                 </div>
                                                 <span className="font-medium">{medication.interval}</span>
-                                                <span className="text-sm">heures</span>
+                                                <span className="text-sm">heures(s)</span>
                                             </div>
                                         )}
                                         {medication.maximum && (
