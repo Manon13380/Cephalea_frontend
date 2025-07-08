@@ -191,16 +191,16 @@ const CrisisDetails = () => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-white/5 rounded-lg p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold text-white flex items-center">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
+                                    <svg className="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5M8 8v8m-4-5v5M4 12h16" />
                                     </svg>
                                     Évolution de l'intensité
                                 </h2>
                                 <button 
                                     onClick={() => setIsAddIntensityModalOpen(true)}
-                                    className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                    className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0"
                                     title="Ajouter une mesure d'intensité"
                                 >
                                     <FiPlus className="w-5 h-5 text-white/70 hover:text-white" />
@@ -212,14 +212,14 @@ const CrisisDetails = () => {
                                         {[...crisis.intensities]
                                             .sort((a, b) => new Date(a.date) - new Date(b.date))
                                             .map((intensity, index) => (
-                                                <div key={intensity.id} className={`flex items-center justify-between p-3 rounded-lg bg-white/5`}>
+                                                <div key={intensity.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-white/5`}>
                                                     <div className='flex items-center gap-x-4'>
-                                                        <div className={`w-10 h-10 rounded-full ${getIntensityColor(intensity.number)} flex items-center justify-center`}>
+                                                        <div className={`w-10 h-10 rounded-full ${getIntensityColor(intensity.number)} flex items-center justify-center flex-shrink-0`}>
                                                             <span className="text-white font-bold text-lg">{intensity.number}</span>
                                                         </div>
                                                         <span className="text-white">{formatDate(intensity.date)}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-x-3">
+                                                    <div className="flex items-center justify-center gap-x-3 mt-2 sm:mt-0 sm:justify-start">
                                                         <button 
                                                             onClick={() => {
                                                                 setSelectedIntensity(intensity);
@@ -254,14 +254,14 @@ const CrisisDetails = () => {
 
                         {/* Soulagement */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold text-white flex items-center">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    Soulagement
+                                    Soulagements
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter un soulagement">
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un soulagement">
                                     <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
@@ -284,14 +284,14 @@ const CrisisDetails = () => {
 
                         {/* Médicaments */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold text-white flex items-center">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
                                     </svg>
                                     Médicaments pris
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter un médicament">
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un médicament">
                                     <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
@@ -314,14 +314,14 @@ const CrisisDetails = () => {
 
                         {/* Activités impactées */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold text-white flex items-center">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                     Activités impactées
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter une activité">
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter une activité">
                                     <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
@@ -344,14 +344,14 @@ const CrisisDetails = () => {
 
                         {/* Déclencheurs */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold text-white flex items-center">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                     </svg>
                                     Déclencheurs
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter un déclencheur">
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un déclencheur">
                                     <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
@@ -375,14 +375,14 @@ const CrisisDetails = () => {
 
                     {/* Commentaire */}
                     <div className="bg-white/5 rounded-lg p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-white flex items-center">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                            <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                                 </svg>
                                 Commentaire
                             </h2>
-                            <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Modifier le commentaire">
+                            <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Modifier le commentaire">
                                 <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path>
                                 </svg>
