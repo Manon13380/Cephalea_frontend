@@ -18,7 +18,6 @@ const CrisisForm = () => {
     const handleSubmit = async(e) => {
         e.preventDefault();
         try {
-
             const response = await api.post(`/crisis?painIntensity=${painIntensity}`, {
                 startDate
               }, {

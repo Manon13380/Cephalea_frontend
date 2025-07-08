@@ -4,8 +4,10 @@ import PrivateLayout from '../components/PrivateLayout';
 import api from "../api/axios";
 import { useApi } from '../hooks/useApi';
 import TerminateCrisisDialog from '../components/TerminateCrisisDialog';
+import IntensityDialog from '../components/IntensityDialog.jsx';
+import DeleteDialog from '../components/DeleteDialog';
 import toastr from 'toastr';
-import { FiCheckSquare } from 'react-icons/fi';
+import { FiCheckSquare, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 
 const CrisisDetails = () => {
     const [crisis, setCrisis] = useState(null);
@@ -15,7 +17,12 @@ const CrisisDetails = () => {
 
     const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
 
-    const { update, loading: updateLoading, error: updateError } = useApi();
+        const { post, update, remove, loading: apiLoading, error: apiError } = useApi();
+
+    const [isAddIntensityModalOpen, setIsAddIntensityModalOpen] = useState(false);
+    const [isEditIntensityModalOpen, setIsEditIntensityModalOpen] = useState(false);
+    const [isDeleteIntensityModalOpen, setIsDeleteIntensityModalOpen] = useState(false);
+    const [selectedIntensity, setSelectedIntensity] = useState(null);
 
     useEffect(() => {
         const fetchCrisisDetails = async () => {
@@ -72,6 +79,50 @@ const CrisisDetails = () => {
         if (intensity <= 3) return 'bg-teal-500';
         if (intensity <= 6) return 'bg-orange-500';
         return 'bg-red-500';
+    };
+
+    const handleAddIntensity = async (newIntensity) => {
+        try {
+            const result = await post(`/intensities?id=${id}`, newIntensity);
+            setCrisis(prev => ({ ...prev, intensities: [...prev.intensities, result] }));
+            toastr.success('Intensité ajoutée avec succès.');
+            setIsAddIntensityModalOpen(false);
+        } catch (error) {
+            console.error("Erreur lors de l'ajout de l'intensité:", error);
+            toastr.error(apiError || "Erreur lors de l'ajout de l'intensité.");
+        }
+    };
+
+    const handleEditIntensity = async (updatedIntensity) => {
+        try {
+            const result = await update(`/intensities/${selectedIntensity.id}`, updatedIntensity);
+            setCrisis(prev => ({
+                ...prev,
+                intensities: prev.intensities.map(i => i.id === selectedIntensity.id ? result : i)
+            }));
+            toastr.success('Intensité modifiée avec succès.');
+            setIsEditIntensityModalOpen(false);
+            setSelectedIntensity(null);
+        } catch (error) {
+            console.error("Erreur lors de la modification de l'intensité:", error);
+            toastr.error(apiError || "Erreur lors de la modification de l'intensité.");
+        }
+    };
+
+    const handleDeleteIntensity = async () => {
+        try {
+            await remove(`/intensities/${selectedIntensity.id}`);
+            setCrisis(prev => ({
+                ...prev,
+                intensities: prev.intensities.filter(i => i.id !== selectedIntensity.id)
+            }));
+            toastr.success('Intensité supprimée avec succès.');
+            setIsDeleteIntensityModalOpen(false);
+            setSelectedIntensity(null);
+        } catch (error) {
+            console.error("Erreur lors de la suppression de l'intensité:", error);
+            toastr.error(apiError || "Erreur lors de la suppression de l'intensité.");
+        }
     };
 
     if (!crisis) {
@@ -140,23 +191,56 @@ const CrisisDetails = () => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-white/5 rounded-lg p-6">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5M8 8v8m-4-5v5M4 12h16" />
-                                </svg>
-                                Évolution de l'intensité
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center">
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5M8 8v8m-4-5v5M4 12h16" />
+                                    </svg>
+                                    Évolution de l'intensité
+                                </h2>
+                                <button 
+                                    onClick={() => setIsAddIntensityModalOpen(true)}
+                                    className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                    title="Ajouter une mesure d'intensité"
+                                >
+                                    <FiPlus className="w-5 h-5 text-white/70 hover:text-white" />
+                                </button>
+                            </div>
                             <div className="space-y-3">
                                 {crisis.intensities && crisis.intensities.length > 0 ? (
                                     <>
                                         {[...crisis.intensities]
                                             .sort((a, b) => new Date(a.date) - new Date(b.date))
                                             .map((intensity, index) => (
-                                                <div key={intensity.id}
-                                                    className={`flex items-center justify-between p-3 rounded-lg ${getIntensityColor(intensity.number)}/10`}
-                                                >
-                                                    <span className="text-white">{formatDate(intensity.date)}</span>
-                                                    <span className="text-white font-bold">{intensity.number}/10</span>
+                                                <div key={intensity.id} className={`flex items-center justify-between p-3 rounded-lg bg-white/5`}>
+                                                    <div className='flex items-center gap-x-4'>
+                                                        <div className={`w-10 h-10 rounded-full ${getIntensityColor(intensity.number)} flex items-center justify-center`}>
+                                                            <span className="text-white font-bold text-lg">{intensity.number}</span>
+                                                        </div>
+                                                        <span className="text-white">{formatDate(intensity.date)}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-x-3">
+                                                        <button 
+                                                            onClick={() => {
+                                                                setSelectedIntensity(intensity);
+                                                                setIsEditIntensityModalOpen(true);
+                                                            }}
+                                                            className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                                            title="Modifier"
+                                                        >
+                                                            <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => {
+                                                                setSelectedIntensity(intensity);
+                                                                setIsDeleteIntensityModalOpen(true);
+                                                            }}
+                                                            className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                                            title="Supprimer"
+                                                        >
+                                                            <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                     </>
@@ -170,12 +254,19 @@ const CrisisDetails = () => {
 
                         {/* Soulagement */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Soulagement
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center">
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Soulagement
+                                </h2>
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter un soulagement">
+                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             <div className={`p-3 rounded-lg  'bg-green-500/10'  'bg-white/5'`}>
                                 {crisis.soulagements && crisis.soulagements.length > 0 ? (
                                     crisis.soulagements.map((soulagement, index) => (
@@ -193,12 +284,19 @@ const CrisisDetails = () => {
 
                         {/* Médicaments */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                </svg>
-                                Médicaments pris
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center">
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                                    </svg>
+                                    Médicaments pris
+                                </h2>
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter un médicament">
+                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center sm:justify-items-stretch">
                                 {crisis.crisisMedication && crisis.crisisMedication.length > 0 ? (
                                     crisis.crisisMedication.map((med, index) => (
@@ -216,12 +314,19 @@ const CrisisDetails = () => {
 
                         {/* Activités impactées */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Activités impactées
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center">
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Activités impactées
+                                </h2>
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter une activité">
+                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {crisis.activities && crisis.activities.length > 0 ? (
                                     crisis.activities.map((activity, index) => (
@@ -239,12 +344,19 @@ const CrisisDetails = () => {
 
                         {/* Déclencheurs */}
                         <div className="bg-white/5 rounded-lg p-6">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                                Déclencheurs
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center">
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    Déclencheurs
+                                </h2>
+                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Ajouter un déclencheur">
+                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             <div className="space-y-2">
                                 {crisis.triggers && crisis.triggers.length > 0 ? (
                                     crisis.triggers.map((trigger, index) => (
@@ -263,12 +375,19 @@ const CrisisDetails = () => {
 
                     {/* Commentaire */}
                     <div className="bg-white/5 rounded-lg p-6">
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                            </svg>
-                            Commentaire
-                        </h2>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-white flex items-center">
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                </svg>
+                                Commentaire
+                            </h2>
+                            <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Modifier le commentaire">
+                                <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path>
+                                </svg>
+                            </button>
+                        </div>
                         <div className="bg-white/10 p-4 rounded-lg">
                             {crisis.comment ? (
                                 <p className="text-white whitespace-pre-wrap">{crisis.comment}</p>
@@ -281,13 +400,53 @@ const CrisisDetails = () => {
             </div>
             {/* MODALE DE TERMINAISON */}
             {crisis && (
-                <TerminateCrisisDialog
-                    isOpen={isTerminateModalOpen}
-                    onClose={() => setIsTerminateModalOpen(false)}
-                    onTerminate={handleTerminateCrisis}
-                    crisisId={id}
-                    crisisStartDate={crisis.startDate}
-                />
+                <>
+                    <TerminateCrisisDialog
+                        isOpen={isTerminateModalOpen}
+                        onClose={() => setIsTerminateModalOpen(false)}
+                        onTerminate={handleTerminateCrisis}
+                        crisisId={id}
+                        crisisStartDate={crisis.startDate}
+                    />
+                    {isAddIntensityModalOpen && (
+                        <IntensityDialog
+                            isOpen={isAddIntensityModalOpen}
+                            onClose={() => setIsAddIntensityModalOpen(false)}
+                            onSubmit={handleAddIntensity}
+                            crisisStartDate={crisis.startDate}
+                            crisisEndDate={crisis.endDate}
+                            mode="add"
+                        />
+                    )}
+
+                    {isEditIntensityModalOpen && selectedIntensity && (
+                        <IntensityDialog
+                            isOpen={isEditIntensityModalOpen}
+                            onClose={() => {
+                                setIsEditIntensityModalOpen(false);
+                                setSelectedIntensity(null);
+                            }}
+                            onSubmit={handleEditIntensity}
+                            intensity={selectedIntensity}
+                            crisisStartDate={crisis.startDate}
+                            crisisEndDate={crisis.endDate}
+                            mode="edit"
+                        />
+                    )}
+
+                    {isDeleteIntensityModalOpen && selectedIntensity && (
+                        <DeleteDialog
+                            isOpen={isDeleteIntensityModalOpen}
+                            onClose={() => {
+                                setIsDeleteIntensityModalOpen(false);
+                                setSelectedIntensity(null);
+                            }}
+                            onConfirm={handleDeleteIntensity}
+                            title="Supprimer l'intensité"
+                            message={`Êtes-vous sûr de vouloir supprimer cette mesure d'intensité du ${formatDate(selectedIntensity.date)} ?`}
+                        />
+                    )}
+                </>
             )}
         </PrivateLayout>
     );
