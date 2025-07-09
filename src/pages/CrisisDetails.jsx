@@ -7,6 +7,7 @@ import TerminateCrisisDialog from '../components/TerminateCrisisDialog';
 import IntensityDialog from '../components/IntensityDialog.jsx';
 import DeleteDialog from '../components/DeleteDialog';
 import { ReliefDialog } from '../components/ReliefDialog';
+import { ActivityDialog } from '../components/ActivityDialog';
 import toastr from 'toastr';
 import { FiCheckSquare, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 
@@ -28,7 +29,11 @@ const CrisisDetails = () => {
     const [selectedIntensity, setSelectedIntensity] = useState(null);
 
     const [isDeleteReliefModalOpen, setIsDeleteReliefModalOpen] = useState(false);
-    const [selectedRelief, setSelectedRelief] = useState(null);
+        const [selectedRelief, setSelectedRelief] = useState(null);
+
+    const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
+    const [selectedActivity, setSelectedActivity] = useState(null);
+    const [isDeleteActivityModalOpen, setIsDeleteActivityModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchCrisisDetails = async () => {
@@ -160,7 +165,36 @@ const CrisisDetails = () => {
             setIsReliefDialogOpen(false);
         } catch (error) {
             toastr.error("Erreur lors de l'ajout du soulagement.");
-            console.error("Erreur lors de l'ajout du soulagement:", error);
+                        console.error("Erreur lors de l'ajout du soulagement:", error);
+        }
+    };
+
+    const handleSaveActivity = async (activityData) => {
+        try {
+            const newActivity = await post(`/crisis/${id}/activities/${activityData.activityId}`);
+            setCrisis(prevCrisis => ({
+                ...prevCrisis,
+                activities: [...prevCrisis.activities, newActivity]
+            }));
+            toastr.success('Activité ajoutée avec succès.');
+            setIsActivityDialogOpen(false);
+        } catch (error) {
+            toastr.error("Erreur lors de l'ajout de l'activité.");
+            console.error("Erreur lors de l'ajout de l'activité:", error);
+        }
+    };
+
+    const handleDeleteActivity = async () => {
+        if (!selectedActivity) return;
+        try {
+            await remove(`/crisis/${id}/activities/${selectedActivity.id}`);
+            setCrisis(prev => ({ ...prev, activities: prev.activities.filter(a => a.id !== selectedActivity.id) }));
+            toastr.success('Activité supprimée avec succès.');
+            setIsDeleteActivityModalOpen(false);
+            setSelectedActivity(null);
+        } catch (error) {
+            console.error("Erreur lors de la suppression de l'activité:", error);
+            toastr.error("Erreur lors de la suppression de l'activité.");
         }
     };
 
@@ -373,21 +407,26 @@ const CrisisDetails = () => {
                                     </svg>
                                     Activités impactées
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter une activité">
-                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
+                                <button onClick={() => setIsActivityDialogOpen(true)} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter une activité">
+                                    <FiPlus className="w-5 h-5 text-white/70 hover:text-white" />
                                 </button>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-3">
                                 {crisis.activities && crisis.activities.length > 0 ? (
-                                    crisis.activities.map((activity, index) => (
-                                        <div key={index} className="bg-white/10 p-3 rounded-lg">
-                                            <span className="text-white">{activity}</span>
+                                    crisis.activities.map((activity) => (
+                                        <div key={activity.id} className="flex items-center justify-between bg-white/5 p-3 rounded-lg">
+                                            <span className="text-white">{activity.name}</span>
+                                            <button
+                                                onClick={() => { setSelectedActivity(activity); setIsDeleteActivityModalOpen(true); }}
+                                                className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                                title="Supprimer"
+                                            >
+                                                <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                            </button>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-white/60 text-center py-4 col-span-2">
+                                    <div className="text-white/60 text-center py-4">
                                         Aucune activité impactée
                                     </div>
                                 )}
@@ -471,7 +510,22 @@ const CrisisDetails = () => {
                         onClose={() => setIsDeleteReliefModalOpen(false)}
                         onConfirm={handleDeleteRelief}
                         title="Supprimer le soulagement"
-                        message={`Êtes-vous sûr de vouloir supprimer le soulagement "${selectedRelief?.name}" ?`}
+                                                message={`Êtes-vous sûr de vouloir supprimer le soulagement "${selectedRelief?.name}" ?`}
+                    />
+
+                    <ActivityDialog
+                        isOpen={isActivityDialogOpen}
+                        onClose={() => setIsActivityDialogOpen(false)}
+                        onSave={handleSaveActivity}
+                        crisisId={id}
+                    />
+
+                    <DeleteDialog
+                        isOpen={isDeleteActivityModalOpen}
+                        onClose={() => setIsDeleteActivityModalOpen(false)}
+                        onConfirm={handleDeleteActivity}
+                        title="Supprimer l'activité"
+                        message={`Êtes-vous sûr de vouloir supprimer l'activité "${selectedActivity?.name}" ?`}
                     />
                     {isAddIntensityModalOpen && (
                         <IntensityDialog
