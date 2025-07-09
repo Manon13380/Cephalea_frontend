@@ -38,7 +38,10 @@ const CrisisDetails = () => {
 
     const [isTriggerDialogOpen, setIsTriggerDialogOpen] = useState(false);
     const [selectedTrigger, setSelectedTrigger] = useState(null);
-    const [isDeleteTriggerModalOpen, setIsDeleteTriggerModalOpen] = useState(false);
+        const [isDeleteTriggerModalOpen, setIsDeleteTriggerModalOpen] = useState(false);
+
+    const [isEditingComment, setIsEditingComment] = useState(false);
+    const [commentText, setCommentText] = useState('');
 
     useEffect(() => {
         const fetchCrisisDetails = async () => {
@@ -229,6 +232,27 @@ const CrisisDetails = () => {
         } catch (error) {
             console.error("Erreur lors de la suppression du déclencheur:", error);
             toastr.error("Erreur lors de la suppression du déclencheur.");
+        }
+    };
+
+    const handleEditCommentClick = () => {
+        setCommentText(crisis.comment || '');
+        setIsEditingComment(true);
+    };
+
+    const handleCancelComment = () => {
+        setIsEditingComment(false);
+    };
+
+    const handleSaveComment = async () => {
+        try {
+            const updatedCrisis = await update(`/crisis/${id}`, { comment: commentText });
+            setCrisis(prevCrisis => ({ ...prevCrisis, comment: updatedCrisis.comment }));
+            setIsEditingComment(false);
+            toastr.success('Commentaire mis à jour avec succès.');
+        } catch (error) {
+            toastr.error('Erreur lors de la mise à jour du commentaire.');
+            console.error('Erreur lors de la mise à jour du commentaire:', error);
         }
     };
 
@@ -505,26 +529,46 @@ const CrisisDetails = () => {
 
                     {/* Commentaire */}
                     <div className="bg-white/5 rounded-lg p-6">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
-                            <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-white flex items-center">
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                                 </svg>
                                 Commentaire
                             </h2>
-                            <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Modifier le commentaire">
-                                <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="bg-white/10 p-4 rounded-lg">
-                            {crisis.comment ? (
-                                <p className="text-white whitespace-pre-wrap">{crisis.comment}</p>
-                            ) : (
-                                <p className="text-white/60 text-center">Aucun commentaire</p>
+                            {!isEditingComment && (
+                                <button onClick={handleEditCommentClick} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Modifier le commentaire">
+                                    <FiEdit className="w-5 h-5 text-white/70 hover:text-white" />
+                                </button>
                             )}
                         </div>
+                        {isEditingComment ? (
+                            <div>
+                                <textarea
+                                    className="w-full bg-gray-700 text-white p-3 rounded-md border border-gray-600 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                                    rows="4"
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    placeholder="Ajoutez votre commentaire ici..."
+                                ></textarea>
+                                <div className="flex justify-end space-x-4 mt-4">
+                                    <button onClick={handleCancelComment} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-colors">
+                                        Annuler
+                                    </button>
+                                    <button onClick={handleSaveComment} className="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-500 transition-colors">
+                                        Enregistrer
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-white/10 p-4 rounded-lg min-h-[100px] cursor-pointer hover:bg-white/20" onClick={handleEditCommentClick}>
+                                {crisis.comment ? (
+                                    <p className="text-white whitespace-pre-wrap">{crisis.comment}</p>
+                                ) : (
+                                    <p className="text-white/60">Aucun commentaire</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
