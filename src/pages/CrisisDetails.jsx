@@ -8,6 +8,7 @@ import IntensityDialog from '../components/IntensityDialog.jsx';
 import DeleteDialog from '../components/DeleteDialog';
 import { ReliefDialog } from '../components/ReliefDialog';
 import { ActivityDialog } from '../components/ActivityDialog';
+import { TriggerDialog } from '../components/TriggerDialog';
 import toastr from 'toastr';
 import { FiCheckSquare, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 
@@ -33,7 +34,11 @@ const CrisisDetails = () => {
 
     const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
     const [selectedActivity, setSelectedActivity] = useState(null);
-    const [isDeleteActivityModalOpen, setIsDeleteActivityModalOpen] = useState(false);
+        const [isDeleteActivityModalOpen, setIsDeleteActivityModalOpen] = useState(false);
+
+    const [isTriggerDialogOpen, setIsTriggerDialogOpen] = useState(false);
+    const [selectedTrigger, setSelectedTrigger] = useState(null);
+    const [isDeleteTriggerModalOpen, setIsDeleteTriggerModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchCrisisDetails = async () => {
@@ -194,7 +199,36 @@ const CrisisDetails = () => {
             setSelectedActivity(null);
         } catch (error) {
             console.error("Erreur lors de la suppression de l'activité:", error);
-            toastr.error("Erreur lors de la suppression de l'activité.");
+                        toastr.error("Erreur lors de la suppression de l'activité.");
+        }
+    };
+
+    const handleSaveTrigger = async (triggerData) => {
+        try {
+            const newTrigger = await post(`/crisis/${id}/triggers/${triggerData.triggerId}`);
+            setCrisis(prevCrisis => ({
+                ...prevCrisis,
+                triggers: [...prevCrisis.triggers, newTrigger]
+            }));
+            toastr.success('Déclencheur ajouté avec succès.');
+            setIsTriggerDialogOpen(false);
+        } catch (error) {
+            toastr.error("Erreur lors de l'ajout du déclencheur.");
+            console.error("Erreur lors de l'ajout du déclencheur:", error);
+        }
+    };
+
+    const handleDeleteTrigger = async () => {
+        if (!selectedTrigger) return;
+        try {
+            await remove(`/crisis/${id}/triggers/${selectedTrigger.id}`);
+            setCrisis(prev => ({ ...prev, triggers: prev.triggers.filter(t => t.id !== selectedTrigger.id) }));
+            toastr.success('Déclencheur supprimé avec succès.');
+            setIsDeleteTriggerModalOpen(false);
+            setSelectedTrigger(null);
+        } catch (error) {
+            console.error("Erreur lors de la suppression du déclencheur:", error);
+            toastr.error("Erreur lors de la suppression du déclencheur.");
         }
     };
 
@@ -442,22 +476,27 @@ const CrisisDetails = () => {
                                     </svg>
                                     Déclencheurs
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un déclencheur">
-                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
+                                <button onClick={() => setIsTriggerDialogOpen(true)} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un déclencheur">
+                                    <FiPlus className="w-5 h-5 text-white/70 hover:text-white" />
                                 </button>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {crisis.triggers && crisis.triggers.length > 0 ? (
-                                    crisis.triggers.map((trigger, index) => (
-                                        <div key={index} className="bg-white/10 p-3 rounded-lg">
-                                            <span className="text-white">{trigger}</span>
+                                    crisis.triggers.map((trigger) => (
+                                        <div key={trigger.id} className="flex items-center justify-between bg-white/5 p-3 rounded-lg">
+                                            <span className="text-white">{trigger.name}</span>
+                                            <button
+                                                onClick={() => { setSelectedTrigger(trigger); setIsDeleteTriggerModalOpen(true); }}
+                                                className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                                title="Supprimer"
+                                            >
+                                                <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                            </button>
                                         </div>
                                     ))
                                 ) : (
                                     <div className="text-white/60 text-center py-4">
-                                        Aucun déclencheur identifié
+                                        Aucun déclencheur
                                     </div>
                                 )}
                             </div>
@@ -525,7 +564,22 @@ const CrisisDetails = () => {
                         onClose={() => setIsDeleteActivityModalOpen(false)}
                         onConfirm={handleDeleteActivity}
                         title="Supprimer l'activité"
-                        message={`Êtes-vous sûr de vouloir supprimer l'activité "${selectedActivity?.name}" ?`}
+                                                message={`Êtes-vous sûr de vouloir supprimer l'activité "${selectedActivity?.name}" ?`}
+                    />
+
+                    <TriggerDialog
+                        isOpen={isTriggerDialogOpen}
+                        onClose={() => setIsTriggerDialogOpen(false)}
+                        onSave={handleSaveTrigger}
+                        crisisId={id}
+                    />
+
+                    <DeleteDialog
+                        isOpen={isDeleteTriggerModalOpen}
+                        onClose={() => setIsDeleteTriggerModalOpen(false)}
+                        onConfirm={handleDeleteTrigger}
+                        title="Supprimer le déclencheur"
+                        message={`Êtes-vous sûr de vouloir supprimer le déclencheur "${selectedTrigger?.name}" ?`}
                     />
                     {isAddIntensityModalOpen && (
                         <IntensityDialog
