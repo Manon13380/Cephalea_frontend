@@ -6,10 +6,13 @@ import { useApi } from '../hooks/useApi';
 import TerminateCrisisDialog from '../components/TerminateCrisisDialog';
 import IntensityDialog from '../components/IntensityDialog.jsx';
 import DeleteDialog from '../components/DeleteDialog';
+import { ReliefDialog } from '../components/ReliefDialog';
 import toastr from 'toastr';
 import { FiCheckSquare, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 
 const CrisisDetails = () => {
+    const [isReliefDialogOpen, setIsReliefDialogOpen] = useState(false);
+    // ...
     const [crisis, setCrisis] = useState(null);
     const { id } = useParams();
     const navigate = useNavigate();
@@ -17,7 +20,7 @@ const CrisisDetails = () => {
 
     const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
 
-        const { post, update, remove, loading: apiLoading, error: apiError } = useApi();
+    const { get, post, update, remove, loading: apiLoading, error: apiError } = useApi();
 
     const [isAddIntensityModalOpen, setIsAddIntensityModalOpen] = useState(false);
     const [isEditIntensityModalOpen, setIsEditIntensityModalOpen] = useState(false);
@@ -125,15 +128,29 @@ const CrisisDetails = () => {
         }
     };
 
+    const handleSaveRelief = async (reliefData) => {
+        try {
+            const newSoulagement = await post(`/crisis/${id}/soulagements/${reliefData.reliefId}`);
+            setCrisis(prevCrisis => ({
+                ...prevCrisis,
+                soulagements: [...prevCrisis.soulagements, newSoulagement]
+            }));
+            toastr.success('Soulagement ajouté avec succès.');
+            setIsReliefDialogOpen(false);
+        } catch (error) {
+            toastr.error("Erreur lors de l'ajout du soulagement.");
+            console.error("Erreur lors de l'ajout du soulagement:", error);
+        }
+    };
+
     if (!crisis) {
-            return (
-                <PrivateLayout>
-                    <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-                    </div>
-                </PrivateLayout>
-            );
-        
+        return (
+            <PrivateLayout>
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+                </div>
+            </PrivateLayout>
+        );
     }
 
     return (
@@ -261,21 +278,25 @@ const CrisisDetails = () => {
                                     </svg>
                                     Soulagements
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un soulagement">
-                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                </button>
+                                <button
+    onClick={() => setIsReliefDialogOpen(true)}
+    className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0"
+    title="Ajouter un soulagement"
+>
+    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+</button>
                             </div>
-                            <div className={`p-3 rounded-lg  'bg-green-500/10'  'bg-white/5'`}>
+                            <div className="space-y-3">
                                 {crisis.soulagements && crisis.soulagements.length > 0 ? (
-                                    crisis.soulagements.map((soulagement, index) => (
-                                        <div key={index} className="bg-white/10 p-3 rounded-lg">
+                                    crisis.soulagements.map((soulagement) => (
+                                        <div key={soulagement.id} className="bg-white/5 p-3 rounded-lg">
                                             <span className="text-white">{soulagement.name}</span>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-white/60 text-center py-4 col-span-2">
+                                    <div className="text-white/60 text-center py-4">
                                         Aucun soulagement enregistré
                                     </div>
                                 )}
@@ -398,7 +419,7 @@ const CrisisDetails = () => {
                     </div>
                 </div>
             </div>
-            {/* MODALE DE TERMINAISON */}
+            {/* MODALES */}
             {crisis && (
                 <>
                     <TerminateCrisisDialog
@@ -407,6 +428,12 @@ const CrisisDetails = () => {
                         onTerminate={handleTerminateCrisis}
                         crisisId={id}
                         crisisStartDate={crisis.startDate}
+                    />
+                    <ReliefDialog
+                        isOpen={isReliefDialogOpen}
+                        onClose={() => setIsReliefDialogOpen(false)}
+                        onSave={handleSaveRelief}
+                        crisisId={id}
                     />
                     {isAddIntensityModalOpen && (
                         <IntensityDialog

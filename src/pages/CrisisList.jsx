@@ -27,6 +27,7 @@ const CrisisList = () => {
         const fetchCrises = async () => {
             try {
                 const response = await get('/crisis');
+                console.log(response);
                 const sortedCrises = response.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
                 setCrises(sortedCrises);
             } catch (error) {
@@ -243,7 +244,7 @@ const CrisisList = () => {
                                                                         </div>
                                                                         <div className="flex items-center justify-between sm:justify-start sm:space-x-2">
                                                                             <span className="text-white/60">Soulagement :</span>
-                                                                            <span className="text-white font-medium">{crise.relief ? 'Oui' : 'Non'}</span>
+                                                                            <span className="text-white font-medium">{crise.soulagements && crise.soulagements.length > 0 ? 'Oui' : 'Non'}</span>
                                                                         </div>
                                                                         <div className="flex items-center justify-between sm:justify-start sm:space-x-2">
                                                                             <span className="text-white/60">Activités impactées :</span>
