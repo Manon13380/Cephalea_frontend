@@ -105,7 +105,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg w-full max-w-md p-6 relative">
+            <div className="bg-gray-800 rounded-lg w-full max-w-md mx-4 p-6 relative">
                 
                 <h2 className="text-2xl font-bold text-white text-center mb-6">Ajouter un médicament</h2>
                 <div className="flex space-x-4 justify-center mb-6">
