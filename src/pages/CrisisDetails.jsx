@@ -27,6 +27,9 @@ const CrisisDetails = () => {
     const [isDeleteIntensityModalOpen, setIsDeleteIntensityModalOpen] = useState(false);
     const [selectedIntensity, setSelectedIntensity] = useState(null);
 
+    const [isDeleteReliefModalOpen, setIsDeleteReliefModalOpen] = useState(false);
+    const [selectedRelief, setSelectedRelief] = useState(null);
+
     useEffect(() => {
         const fetchCrisisDetails = async () => {
             try {
@@ -125,6 +128,24 @@ const CrisisDetails = () => {
         } catch (error) {
             console.error("Erreur lors de la suppression de l'intensité:", error);
             toastr.error(apiError || "Erreur lors de la suppression de l'intensité.");
+        }
+    };
+
+    const handleDeleteRelief = async () => {
+        if (!selectedRelief) return;
+        try {
+            await remove(`/crisis/${id}/soulagements/${selectedRelief.id}`);
+            setCrisis(prev => ({
+                ...
+                prev,
+                soulagements: prev.soulagements.filter(s => s.id !== selectedRelief.id)
+            }));
+            toastr.success('Soulagement supprimé avec succès.');
+            setIsDeleteReliefModalOpen(false);
+            setSelectedRelief(null);
+        } catch (error) {
+            console.error("Erreur lors de la suppression du soulagement:", error);
+            toastr.error("Erreur lors de la suppression du soulagement.");
         }
     };
 
@@ -291,8 +312,18 @@ const CrisisDetails = () => {
                             <div className="space-y-3">
                                 {crisis.soulagements && crisis.soulagements.length > 0 ? (
                                     crisis.soulagements.map((soulagement) => (
-                                        <div key={soulagement.id} className="bg-white/5 p-3 rounded-lg">
+                                        <div key={soulagement.id} className="flex items-center justify-between bg-white/5 p-3 rounded-lg">
                                             <span className="text-white">{soulagement.name}</span>
+                                            <button 
+                                                onClick={() => {
+                                                    setSelectedRelief(soulagement);
+                                                    setIsDeleteReliefModalOpen(true);
+                                                }}
+                                                className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
+                                                title="Supprimer"
+                                            >
+                                                <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                            </button>
                                         </div>
                                     ))
                                 ) : (
@@ -434,6 +465,13 @@ const CrisisDetails = () => {
                         onClose={() => setIsReliefDialogOpen(false)}
                         onSave={handleSaveRelief}
                         crisisId={id}
+                    />
+                    <DeleteDialog
+                        isOpen={isDeleteReliefModalOpen}
+                        onClose={() => setIsDeleteReliefModalOpen(false)}
+                        onConfirm={handleDeleteRelief}
+                        title="Supprimer le soulagement"
+                        message={`Êtes-vous sûr de vouloir supprimer le soulagement "${selectedRelief?.name}" ?`}
                     />
                     {isAddIntensityModalOpen && (
                         <IntensityDialog
