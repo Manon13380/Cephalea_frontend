@@ -7,6 +7,7 @@ import TerminateCrisisDialog from '../components/TerminateCrisisDialog';
 import IntensityDialog from '../components/IntensityDialog.jsx';
 import DeleteDialog from '../components/DeleteDialog';
 import { ReliefDialog } from '../components/ReliefDialog';
+import MedicationDialog from '../components/MedicationDialog';
 import { ActivityDialog } from '../components/ActivityDialog';
 import { TriggerDialog } from '../components/TriggerDialog';
 import toastr from 'toastr';
@@ -39,6 +40,8 @@ const CrisisDetails = () => {
     const [isTriggerDialogOpen, setIsTriggerDialogOpen] = useState(false);
     const [selectedTrigger, setSelectedTrigger] = useState(null);
         const [isDeleteTriggerModalOpen, setIsDeleteTriggerModalOpen] = useState(false);
+    // Ajout pour le dialog médicament
+    const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false);
 
     const [isEditingComment, setIsEditingComment] = useState(false);
     const [commentText, setCommentText] = useState('');
@@ -164,16 +167,42 @@ const CrisisDetails = () => {
 
     const handleSaveRelief = async (reliefData) => {
         try {
-            const newSoulagement = await post(`/crisis/${id}/soulagements/${reliefData.reliefId}`);
-            setCrisis(prevCrisis => ({
-                ...prevCrisis,
-                soulagements: [...prevCrisis.soulagements, newSoulagement]
+            const newRelief = await post(`/crisis/${id}/soulagements`, reliefData);
+            setCrisis(prev => ({
+                ...prev,
+                soulagements: [...prev.soulagements, newRelief]
             }));
             toastr.success('Soulagement ajouté avec succès.');
             setIsReliefDialogOpen(false);
         } catch (error) {
-            toastr.error("Erreur lors de l'ajout du soulagement.");
-                        console.error("Erreur lors de l'ajout du soulagement:", error);
+            console.error("Erreur lors de l'ajout du soulagement:", error);
+            toastr.error(apiError || "Erreur lors de l'ajout du soulagement.");
+        }
+    };
+
+    const handleSaveMedication = async (medicationData) => {
+        try {
+            let linkedMedication;
+            if (medicationData.name) {
+                // Création d’un nouveau médicament
+                const { date, ...newMedicationData } = medicationData;
+                const newMedication = await post('/medications', newMedicationData);
+                linkedMedication = await post(`/crisis/${id}/medications`, { medicationId: newMedication.id, date: date });
+            } else {
+                // Lier un traitement existant
+                linkedMedication = await post(`/crisis/${id}/medications`, { medicationId: medicationData.medicationId, date: medicationData.date });
+            }
+            if (linkedMedication) {
+                setCrisis(prevCrisis => {
+                    const updatedMedications = [...(prevCrisis.medications || []), linkedMedication];
+                    return { ...prevCrisis, medications: updatedMedications };
+                });
+                toastr.success('Médicament ajouté avec succès.');
+            }
+            setIsMedicationDialogOpen(false);
+        } catch (error) {
+            console.error("Erreur lors de l'ajout du médicament:", error);
+            toastr.error(apiError || "Erreur lors de l'ajout du médicament.");
         }
     };
 
@@ -435,11 +464,11 @@ const CrisisDetails = () => {
                                     </svg>
                                     Médicaments pris
                                 </h2>
-                                <button className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un médicament">
-                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                </button>
+                                <button onClick={() => setIsMedicationDialogOpen(true)} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un médicament">
+    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+</button>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center sm:justify-items-stretch">
                                 {crisis.crisisMedication && crisis.crisisMedication.length > 0 ? (
@@ -581,6 +610,14 @@ const CrisisDetails = () => {
                         onTerminate={handleTerminateCrisis}
                         crisisId={id}
                         crisisStartDate={crisis.startDate}
+                    />
+                    <MedicationDialog
+                        isOpen={isMedicationDialogOpen}
+                        onClose={() => setIsMedicationDialogOpen(false)}
+                        onSave={handleSaveMedication}
+                        minDate={crisis.startDate}
+                        maxDate={crisis.endDate}
+                        crisisId={id}
                     />
                     <ReliefDialog
                         isOpen={isReliefDialogOpen}
