@@ -228,7 +228,6 @@ const CrisisDetails = () => {
             setIsActivityDialogOpen(false);
         } catch (error) {
             toastr.error("Erreur lors de l'ajout de l'activité.");
-            console.error("Erreur lors de l'ajout de l'activité:", error);
         }
     };
 
@@ -243,6 +242,23 @@ const CrisisDetails = () => {
         } catch (error) {
             console.error("Erreur lors de la suppression de l'activité:", error);
             toastr.error("Erreur lors de la suppression de l'activité.");
+        }
+    };
+
+    const handleConfirmDeleteMedication = async () => {
+        if (!selectedMedication) return;
+        try {
+            await remove(`/crisisMedications/${selectedMedication.id}`);
+            setCrisis(prev => ({
+                ...prev,
+                crisisMedication: prev.crisisMedication.filter(med => med.id !== selectedMedication.id)
+            }));
+            toastr.success('Médicament supprimé avec succès.');
+        } catch (error) {
+            toastr.error("Erreur lors de la suppression du médicament.");
+        } finally {
+            setIsDeleteMedicationModalOpen(false);
+            setSelectedMedication(null);
         }
     };
 
@@ -370,49 +386,36 @@ const CrisisDetails = () => {
                                 </button>
                             </div>
                             <div className="space-y-3">
-                                {crisis.intensities && crisis.intensities.length > 0 ? (
-                                    <>
-                                        {[...crisis.intensities]
-                                            .sort((a, b) => new Date(a.date) - new Date(b.date))
-                                            .map((intensity, index) => (
-                                                <div key={intensity.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-white/5`}>
-                                                    <div className='flex items-center gap-x-4'>
-                                                        <div className={`w-10 h-10 rounded-full ${getIntensityColor(intensity.number)} flex items-center justify-center flex-shrink-0`}>
-                                                            <span className="text-white font-bold text-lg">{intensity.number}</span>
-                                                        </div>
-                                                        <span className="text-white">{formatDate(intensity.date)}</span>
-                                                    </div>
-                                                    <div className="flex items-center justify-center gap-x-3 mt-2 sm:mt-0 sm:justify-start">
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedIntensity(intensity);
-                                                                setIsEditIntensityModalOpen(true);
-                                                            }}
-                                                            className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
-                                                            title="Modifier"
-                                                        >
-                                                            <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedIntensity(intensity);
-                                                                setIsDeleteIntensityModalOpen(true);
-                                                            }}
-                                                            className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110"
-                                                            title="Supprimer"
-                                                        >
-                                                            <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                    </>
-                                ) : (
-                                    <div className="text-white/60 text-center py-4">
-                                        Aucune évolution d'intensité enregistrée
-                                    </div>
-                                )}
-                            </div>
+    {crisis.intensities && crisis.intensities.length > 0 ? (
+        [...crisis.intensities]
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .map((intensity) => (
+                <div key={intensity.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/10 p-3 rounded-lg">
+                    <div className="flex items-center gap-x-4 flex-1">
+                        <div className={`w-10 h-10 rounded-full ${getIntensityColor(intensity.number)} flex items-center justify-center flex-shrink-0`}>
+                            <span className="text-white font-bold text-lg">{intensity.number}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-white font-semibold">Intensité de {intensity.number}/10</span>
+                            <span className="text-white/70 text-sm">{formatDate(intensity.date)}</span>
+                        </div>
+                    </div>
+                    <div className="flex justify-end sm:justify-center items-center gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-4 border-white/10">
+                        <button onClick={() => { setSelectedIntensity(intensity); setIsEditIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
+                            <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
+                        </button>
+                        <button onClick={() => { setSelectedIntensity(intensity); setIsDeleteIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Supprimer">
+                            <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                        </button>
+                    </div>
+                </div>
+            ))
+    ) : (
+        <div className="text-white/60 text-center py-4">
+            Aucune évolution d'intensité enregistrée
+        </div>
+    )}
+</div>
                         </div>
 
                         {/* Soulagement */}
@@ -475,39 +478,37 @@ const CrisisDetails = () => {
                                 </button>
                             </div>
                             <div className="flex flex-col gap-3">
-                                {crisis.crisisMedication && crisis.crisisMedication.length > 0 ? (
-                                    crisis.crisisMedication.map((med, index) => (
-                                        <div key={index} className="flex items-center gap-x-4 bg-white/10 p-3 rounded-lg">
-                                            <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-white font-bold text-lg">💊</span>
-                                            </div>
-                                            <div className="flex flex-col flex-1">
-                                                <span className="text-white font-semibold">{med.medication.name}{med.medication.dosage ? ` (${med.medication.dosage})` : ''}</span>
-                                                <span className="text-white/70 text-sm">{med.dateTimeIntake ? formatDate(med.dateTimeIntake) : ''}</span>
-                                            </div>
-                                            <div className="flex gap-2 ml-auto">
-                                                <button onClick={() => handleEditMedication(index)} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
-                                                    <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedMedication(med);
-                                                        setIsDeleteMedicationModalOpen(true);
-                                                    }}
-                                                    className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200"
-                                                    title="Supprimer"
-                                                >
-                                                    <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-white/60 text-center py-4 col-span-2">
-                                        Aucun médicament pris
-                                    </div>
-                                )}
-                            </div>
+    {crisis.crisisMedication && crisis.crisisMedication.length > 0 ? (
+        crisis.crisisMedication.map((med, index) => (
+            <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/10 p-3 rounded-lg">
+                <div className="flex items-center gap-x-4 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-lg">💊</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-white font-semibold">{med.medication.name}{med.medication.dosage ? ` (${med.medication.dosage})` : ''}</span>
+                        <span className="text-white/70 text-sm">{med.dateTimeIntake ? formatDate(med.dateTimeIntake) : ''}</span>
+                    </div>
+                </div>
+                <div className="flex justify-end sm:justify-center items-center gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-4 border-white/10">
+                    <button onClick={() => handleEditMedication(index)} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
+                        <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
+                    </button>
+                    <button onClick={() => {
+                        setSelectedMedication(med);
+                        setIsDeleteMedicationModalOpen(true);
+                    }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Supprimer">
+                        <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                    </button>
+                </div>
+            </div>
+        ))
+    ) : (
+        <div className="text-white/60 text-center py-4">
+            Aucun médicament pris
+        </div>
+    )}
+</div>
                         </div>
 
                         {/* Activités impactées */}
@@ -583,15 +584,15 @@ const CrisisDetails = () => {
 
                     {/* Commentaire */}
                     <div className="bg-white/5 rounded-lg p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-white flex items-center">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                            <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1">
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                                 </svg>
                                 Commentaire
                             </h2>
                             {!isEditingComment && (
-                                <button onClick={handleEditCommentClick} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Modifier le commentaire">
+                                <button onClick={handleEditCommentClick} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center" title="Modifier le commentaire">
                                     <FiEdit className="w-5 h-5 text-white/70 hover:text-white" />
                                 </button>
                             )}
@@ -687,7 +688,18 @@ const CrisisDetails = () => {
                         title="Supprimer le déclencheur"
                         message={`Êtes-vous sûr de vouloir supprimer le déclencheur "${selectedTrigger?.name}" ?`}
                     />
-                    
+                    {isDeleteMedicationModalOpen && selectedMedication && (
+                        <DeleteDialog
+                            isOpen={isDeleteMedicationModalOpen}
+                            onClose={() => {
+                                setIsDeleteMedicationModalOpen(false);
+                                setSelectedMedication(null);
+                            }}
+                            onConfirm={handleConfirmDeleteMedication}
+                            title="Supprimer le médicament"
+                            message={`Êtes-vous sûr de vouloir supprimer le médicament ${selectedMedication.medication.name} ?`}
+                        />
+                    )}
                     {isAddIntensityModalOpen && (
                         <IntensityDialog
                             isOpen={isAddIntensityModalOpen}

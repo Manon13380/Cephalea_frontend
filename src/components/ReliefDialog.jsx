@@ -19,8 +19,15 @@ export const ReliefDialog = ({
     useEffect(() => {
         const fetchReliefs = async () => {
             try {
-                const data = await get('/soulagements');
-                setReliefs(data || []);
+                const [allReliefs, crisisDetails] = await Promise.all([
+                    get('/soulagements'),
+                    get(`/crisis/${crisisId}`)
+                ]);
+
+                const crisisReliefIds = new Set(crisisDetails.soulagements.map(s => s.id));
+                const availableReliefs = allReliefs.filter(r => !crisisReliefIds.has(r.id));
+
+                setReliefs(availableReliefs);
             } catch (error) {
                 console.error('Erreur lors du chargement des soulagements:', error);
                 toast.error('Erreur lors du chargement des types de soulagement');
