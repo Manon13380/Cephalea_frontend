@@ -31,17 +31,19 @@ const CrisisDetails = () => {
     const [selectedIntensity, setSelectedIntensity] = useState(null);
 
     const [isDeleteReliefModalOpen, setIsDeleteReliefModalOpen] = useState(false);
-        const [selectedRelief, setSelectedRelief] = useState(null);
+    const [selectedRelief, setSelectedRelief] = useState(null);
 
     const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
     const [selectedActivity, setSelectedActivity] = useState(null);
-        const [isDeleteActivityModalOpen, setIsDeleteActivityModalOpen] = useState(false);
+    const [isDeleteActivityModalOpen, setIsDeleteActivityModalOpen] = useState(false);
 
     const [isTriggerDialogOpen, setIsTriggerDialogOpen] = useState(false);
     const [selectedTrigger, setSelectedTrigger] = useState(null);
-        const [isDeleteTriggerModalOpen, setIsDeleteTriggerModalOpen] = useState(false);
+    const [isDeleteTriggerModalOpen, setIsDeleteTriggerModalOpen] = useState(false);
     // Ajout pour le dialog médicament
     const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false);
+    const [isDeleteMedicationModalOpen, setIsDeleteMedicationModalOpen] = useState(false);
+    const [selectedMedication, setSelectedMedication] = useState(null);
 
     const [isEditingComment, setIsEditingComment] = useState(false);
     const [commentText, setCommentText] = useState('');
@@ -167,7 +169,8 @@ const CrisisDetails = () => {
 
     const handleSaveRelief = async (reliefData) => {
         try {
-            const newRelief = await post(`/crisis/${id}/soulagements`, reliefData);
+            const newRelief = await post(`/crisis/${id}/soulagements/${reliefData.reliefId}`);
+
             setCrisis(prev => ({
                 ...prev,
                 soulagements: [...prev.soulagements, newRelief]
@@ -184,21 +187,29 @@ const CrisisDetails = () => {
         try {
             let linkedMedication;
             if (medicationData.name) {
-                // Création d’un nouveau médicament
-                const { date, ...newMedicationData } = medicationData;
+                const { dateTimeIntake, reminderEnabled, addToTreatments, ...otherMedicationFields } = medicationData;
+                const newMedicationData = {
+                    ...otherMedicationFields,
+                    reminderEnabled: !!reminderEnabled,
+                    addToTreatments: !!addToTreatments,
+                    isDelete: false
+                };
                 const newMedication = await post('/medications', newMedicationData);
-                linkedMedication = await post(`/crisis/${id}/medications`, { medicationId: newMedication.id, date: date });
+                linkedMedication = await post(`/crisis/${id}/crisisMedications?medicationId=${newMedication.id}`, { dateTimeIntake });
             } else {
-                // Lier un traitement existant
-                linkedMedication = await post(`/crisis/${id}/medications`, { medicationId: medicationData.medicationId, date: medicationData.date });
+                linkedMedication = await post(`/crisis/${id}/crisisMedications?medicationId=${medicationData.medicationId}`, { dateTimeIntake: medicationData.dateTimeIntake });
             }
-            if (linkedMedication) {
-                setCrisis(prevCrisis => {
-                    const updatedMedications = [...(prevCrisis.medications || []), linkedMedication];
-                    return { ...prevCrisis, medications: updatedMedications };
-                });
-                toastr.success('Médicament ajouté avec succès.');
-            }
+            // On aplatit la structure pour correspondre à la liste attendue
+            const flatMedication = {
+                medication: linkedMedication.medication,
+                id: linkedMedication.id,
+                dateTimeIntake: linkedMedication.dateTimeIntake
+            };
+            setCrisis(prev => ({
+                ...prev,
+                crisisMedication: [...(prev.crisisMedication || []), flatMedication]
+            }));
+            toastr.success('Médicament ajouté avec succès.');
             setIsMedicationDialogOpen(false);
         } catch (error) {
             console.error("Erreur lors de l'ajout du médicament:", error);
@@ -231,7 +242,7 @@ const CrisisDetails = () => {
             setSelectedActivity(null);
         } catch (error) {
             console.error("Erreur lors de la suppression de l'activité:", error);
-                        toastr.error("Erreur lors de la suppression de l'activité.");
+            toastr.error("Erreur lors de la suppression de l'activité.");
         }
     };
 
@@ -335,16 +346,9 @@ const CrisisDetails = () => {
                                                 <FiCheckSquare className="w-5 h-5 text-white/70 hover:text-white" />
                                             </button>
                                         )}
-                                        
+
                                     </p>
                                 </div>
-                            </div>
-                            <div className="flex justify-center sm:justify-end gap-4 w-full sm:w-auto">
-                                {crisis.crisisMedication?.length > 0 && (
-                                    <div className="px-4 py-2 bg-teal-500/20 rounded-full whitespace-nowrap">
-                                        <span className="text-teal-300">Médicaments pris</span>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -357,7 +361,7 @@ const CrisisDetails = () => {
                                     </svg>
                                     Évolution de l'intensité
                                 </h2>
-                                <button 
+                                <button
                                     onClick={() => setIsAddIntensityModalOpen(true)}
                                     className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0"
                                     title="Ajouter une mesure d'intensité"
@@ -379,7 +383,7 @@ const CrisisDetails = () => {
                                                         <span className="text-white">{formatDate(intensity.date)}</span>
                                                     </div>
                                                     <div className="flex items-center justify-center gap-x-3 mt-2 sm:mt-0 sm:justify-start">
-                                                        <button 
+                                                        <button
                                                             onClick={() => {
                                                                 setSelectedIntensity(intensity);
                                                                 setIsEditIntensityModalOpen(true);
@@ -389,7 +393,7 @@ const CrisisDetails = () => {
                                                         >
                                                             <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={() => {
                                                                 setSelectedIntensity(intensity);
                                                                 setIsDeleteIntensityModalOpen(true);
@@ -416,26 +420,26 @@ const CrisisDetails = () => {
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
                                 <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                     Soulagements
                                 </h2>
                                 <button
-    onClick={() => setIsReliefDialogOpen(true)}
-    className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0"
-    title="Ajouter un soulagement"
->
-    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-    </svg>
-</button>
+                                    onClick={() => setIsReliefDialogOpen(true)}
+                                    className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0"
+                                    title="Ajouter un soulagement"
+                                >
+                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
                             </div>
                             <div className="space-y-3">
                                 {crisis.soulagements && crisis.soulagements.length > 0 ? (
                                     crisis.soulagements.map((soulagement) => (
                                         <div key={soulagement.id} className="flex items-center justify-between bg-white/5 p-3 rounded-lg">
                                             <span className="text-white">{soulagement.name}</span>
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     setSelectedRelief(soulagement);
                                                     setIsDeleteReliefModalOpen(true);
@@ -460,21 +464,42 @@ const CrisisDetails = () => {
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
                                 <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
                                     </svg>
                                     Médicaments pris
                                 </h2>
                                 <button onClick={() => setIsMedicationDialogOpen(true)} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 order-1 sm:order-2 self-end sm:self-center mt-0 mb-2 sm:mb-0" title="Ajouter un médicament">
-    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-    </svg>
-</button>
+                                    <svg className="w-5 h-5 text-white/70 hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center sm:justify-items-stretch">
+                            <div className="flex flex-col gap-3">
                                 {crisis.crisisMedication && crisis.crisisMedication.length > 0 ? (
                                     crisis.crisisMedication.map((med, index) => (
-                                        <div key={index} className="bg-white/10 p-3 rounded-lg">
-                                            <span className="text-white">{med.name}</span>
+                                        <div key={index} className="flex items-center gap-x-4 bg-white/10 p-3 rounded-lg">
+                                            <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-white font-bold text-lg">💊</span>
+                                            </div>
+                                            <div className="flex flex-col flex-1">
+                                                <span className="text-white font-semibold">{med.medication.name}{med.medication.dosage ? ` (${med.medication.dosage})` : ''}</span>
+                                                <span className="text-white/70 text-sm">{med.dateTimeIntake ? formatDate(med.dateTimeIntake) : ''}</span>
+                                            </div>
+                                            <div className="flex gap-2 ml-auto">
+                                                <button onClick={() => handleEditMedication(index)} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
+                                                    <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedMedication(med);
+                                                        setIsDeleteMedicationModalOpen(true);
+                                                    }}
+                                                    className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200"
+                                                    title="Supprimer"
+                                                >
+                                                    <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))
                                 ) : (
@@ -490,7 +515,7 @@ const CrisisDetails = () => {
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
                                 <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                     Activités impactées
                                 </h2>
@@ -525,7 +550,7 @@ const CrisisDetails = () => {
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
                                 <h2 className="text-xl font-bold text-white flex items-center order-2 sm:order-1 mb-2">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                     </svg>
                                     Déclencheurs
                                 </h2>
@@ -561,7 +586,7 @@ const CrisisDetails = () => {
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold text-white flex items-center">
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                                 </svg>
                                 Commentaire
                             </h2>
@@ -630,7 +655,7 @@ const CrisisDetails = () => {
                         onClose={() => setIsDeleteReliefModalOpen(false)}
                         onConfirm={handleDeleteRelief}
                         title="Supprimer le soulagement"
-                                                message={`Êtes-vous sûr de vouloir supprimer le soulagement "${selectedRelief?.name}" ?`}
+                        message={`Êtes-vous sûr de vouloir supprimer le soulagement "${selectedRelief?.name}" ?`}
                     />
 
                     <ActivityDialog
@@ -645,7 +670,7 @@ const CrisisDetails = () => {
                         onClose={() => setIsDeleteActivityModalOpen(false)}
                         onConfirm={handleDeleteActivity}
                         title="Supprimer l'activité"
-                                                message={`Êtes-vous sûr de vouloir supprimer l'activité "${selectedActivity?.name}" ?`}
+                        message={`Êtes-vous sûr de vouloir supprimer l'activité "${selectedActivity?.name}" ?`}
                     />
 
                     <TriggerDialog
@@ -662,6 +687,7 @@ const CrisisDetails = () => {
                         title="Supprimer le déclencheur"
                         message={`Êtes-vous sûr de vouloir supprimer le déclencheur "${selectedTrigger?.name}" ?`}
                     />
+                    
                     {isAddIntensityModalOpen && (
                         <IntensityDialog
                             isOpen={isAddIntensityModalOpen}

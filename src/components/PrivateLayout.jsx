@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiSettings, FiZap, FiLogOut, FiChevronDown } from 'react-icons/fi';
-import { FaHome, FaPills, FaCalendarAlt, FaBars } from 'react-icons/fa';
+import { FaHome, FaPills, FaCalendarAlt, FaListUl } from 'react-icons/fa';
 import LogoCephalea from '../assets/images/Logo_cephalea.png';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -104,7 +104,7 @@ const PrivateLayout = ({ children, showPopup}) => {
                         </button>
                         <Link to="/crisis-list">
                             <button className={`bg-transparent border-none outline-none ${location.pathname === '/crisis-list' ? 'text-white' : 'text-teal-400'} hover:text-teal-300 cursor-pointer focus:outline-none`}>
-                                <FaBars size={24} />
+                                <FaListUl size={24} />
                             </button>
                         </Link>
                     </div>

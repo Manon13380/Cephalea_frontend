@@ -35,7 +35,6 @@ const AddTreatmentForm = () => {
     useEffect(() => {
         if (location.state?.isEdit) {
             setFormData(location.state);
-            console.log(location.state);
         }
     }, [location.state]);
 

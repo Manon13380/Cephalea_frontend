@@ -74,7 +74,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                     setIsLoading(false);
                     return;
                 }
-                await onSave({ medicationId: selectedTreatmentId, date });
+                await onSave({ medicationId: selectedTreatmentId, dateTimeIntake: date });
             } else {
                 if (!medName || !date) {
                     toastr.error('Veuillez renseigner le nom et la date');
@@ -93,7 +93,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                     periodMaximum,
                     isAlarm,
                     isTreatment,
-                    date
+                    dateTimeIntake: date
                 });
             }
         } finally {

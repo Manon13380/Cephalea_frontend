@@ -48,7 +48,6 @@ const Register = () => {
     };
 
     try {
-      console.log("Inscription en cours...");
       const response = await api.post("/auth/signup", {
         name: formData.name,
         firstName: formData.firstName,

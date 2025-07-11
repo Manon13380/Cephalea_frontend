@@ -240,7 +240,7 @@ const CrisisList = () => {
                                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-x-8 sm:gap-y-2 text-sm">
                                                                         <div className="flex items-center justify-between sm:justify-start sm:space-x-2">
                                                                             <span className="text-white/60">Médicaments :</span>
-                                                                            <span className="text-white font-medium">{crise.crisisMedications && crise.crisisMedications.length > 0 ? 'Oui' : 'Non'}</span>
+                                                                            <span className="text-white font-medium">{crise.crisisMedication && crise.crisisMedication.length > 0 ? 'Oui' : 'Non'}</span>
                                                                         </div>
                                                                         <div className="flex items-center justify-between sm:justify-start sm:space-x-2">
                                                                             <span className="text-white/60">Soulagement :</span>
