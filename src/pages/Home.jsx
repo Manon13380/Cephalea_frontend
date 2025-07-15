@@ -214,8 +214,8 @@ const Home = () => {
                     {/* Chart 1: Nombre de migraines par mois */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col">
                         <h2 className="text-xl font-semibold mb-4 text-center">Nombre de migraines par mois</h2>
-                        <div className="relative flex-grow">
-                            {monthlyCountData ? <Line options={{
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">{monthlyCountData ? <Line options={{
                                 maintainAspectRatio: false,
                                 ...chartOptions,
                                 plugins: {
@@ -232,15 +232,15 @@ const Home = () => {
                                         }
                                     }
                                 }
-                            }} data={monthlyCountData} /> : <p>Chargement...</p>}
+                            }} data={monthlyCountData} /> : <p>Chargement...</p>}</div>
                         </div>
                     </div>
 
                     {/* Chart 2: Évolution de l'intensité par crise */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col">
                         <h2 className="text-xl font-semibold mb-4 text-center">Évolution de l'intensité par crise</h2>
-                        <div className="relative flex-grow">
-                            {intensityEvolutionData ? <Bar options={{
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">{intensityEvolutionData ? <Bar options={{
                                 maintainAspectRatio: false,
                                 ...chartOptions,
                                 plugins: {
@@ -263,15 +263,15 @@ const Home = () => {
                                         }
                                     }
                                 }
-                            }} data={intensityEvolutionData} /> : <p>Chargement...</p>}
+                            }} data={intensityEvolutionData} /> : <p>Chargement...</p>}</div>
                         </div>
                     </div>
 
                     {/* Chart 3: Durée moyenne par mois (en heures) */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col">
                         <h2 className="text-xl font-semibold mb-4 text-center">Durée moyenne par mois (en heures)</h2>
-                        <div className="relative flex-grow">
-                            {monthlyDurationData ? <Bar options={{
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">{monthlyDurationData ? <Bar options={{
                                 maintainAspectRatio: false,
                                 ...chartOptions,
                                 plugins: {
@@ -288,7 +288,7 @@ const Home = () => {
                                         }
                                     }
                                 }
-                            }} data={monthlyDurationData} /> : <p>Chargement...</p>}
+                            }} data={monthlyDurationData} /> : <p>Chargement...</p>}</div>
                         </div>
                     </div>
 
@@ -326,8 +326,8 @@ const Home = () => {
                     {/* Chart 5: Top 3 des déclencheurs */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col md:col-span-2">
                         <h2 className="text-xl font-semibold mb-4 text-center">Top 3 des déclencheurs</h2>
-                        <div className="relative flex-grow">
-                            {triggerData ? <Bar options={{...chartOptions, maintainAspectRatio: false, indexAxis: 'y' }} data={triggerData} /> : <p>Chargement...</p>}
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">{triggerData ? <Bar options={{...chartOptions, maintainAspectRatio: false, indexAxis: 'y' }} data={triggerData} /> : <p>Chargement...</p>}</div>
                         </div>
                     </div>
                 </div>
