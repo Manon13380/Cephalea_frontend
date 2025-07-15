@@ -21,7 +21,8 @@ const CrisisDetails = () => {
     const navigate = useNavigate();
     const token = sessionStorage.getItem("token");
 
-    const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
+        const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
+    const [isEditStartDateModalOpen, setIsEditStartDateModalOpen] = useState(false);
 
     const { get, post, update, remove, loading: apiLoading, error: apiError } = useApi();
 
@@ -71,6 +72,18 @@ const CrisisDetails = () => {
 
     const handleOpenTerminateModal = () => {
         setIsTerminateModalOpen(true);
+    };
+
+        const handleUpdateStartDate = async (newStartDate) => {
+        try {
+            const updatedCrisis = await update(`/crisis/${id}`, { startDate: newStartDate });
+            setCrisis(prev => ({ ...prev, startDate: updatedCrisis.startDate }));
+            setIsEditStartDateModalOpen(false);
+            toastr.success('Date de début de la crise modifiée avec succès !');
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour de la date de début:", error);
+            toastr.error('Erreur lors de la modification de la date de début.');
+        }
     };
 
     const handleTerminateCrisis = async (endDate) => {
@@ -380,8 +393,9 @@ const CrisisDetails = () => {
 
                 <div className="space-y-6">
                     {/* Header avec l'intensité actuelle */}
-                    <div className="bg-white/5 rounded-lg p-6">
-                        <div className="flex flex-col items-center sm:items-start sm:flex-row sm:justify-between gap-4">
+                                        <div className="bg-white/5 rounded-lg p-6">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
+                            {/* Left part: Intensity + Title/Subtitle */}
                             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                                 <div className={`h-20 w-20 rounded-full ${getIntensityColor([...crisis.intensities].sort((a, b) => new Date(a.date) - new Date(b.date))[0].number)} flex items-center justify-center flex-shrink-0`}>
                                     <span className="text-3xl font-bold text-white">
@@ -389,12 +403,12 @@ const CrisisDetails = () => {
                                     </span>
                                 </div>
                                 <div className="text-center sm:text-left">
-                                    <h1 className="text-2xl font-bold text-white">Crise du {formatDate(crisis.startDate)}</h1>
-                                    <p className={crisis.endDate ? "text-white/60" : "text-yellow-400 font-semibold"}>
+                                    <h1 className="text-3xl font-bold text-white">
+                                        Crise du {formatDate(crisis.startDate)}
+                                    </h1>
+                                    <p className={crisis.endDate ? "text-white/60" : "text-yellow-400 font-semibold flex items-center"}>
                                         {crisis.endDate ? `Terminée le ${formatDate(crisis.endDate)}` : "En cours"}
-                                        {crisis.endDate ? (
-                                            <></>
-                                        ) : (
+                                        {!crisis.endDate && (
                                             <button
                                                 onClick={handleOpenTerminateModal}
                                                 className="p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 ml-3"
@@ -403,9 +417,15 @@ const CrisisDetails = () => {
                                                 <FiCheckSquare className="w-5 h-5 text-white/70 hover:text-white" />
                                             </button>
                                         )}
-
                                     </p>
                                 </div>
+                            </div>
+
+                            {/* Right part: Edit button */}
+                            <div>
+                                <button onClick={() => setIsEditStartDateModalOpen(true)} className="group p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110" title="Modifier la date de début">
+                                    <FiEdit className="w-5 h-5 text-white/70 group-hover:text-white" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -784,12 +804,29 @@ const CrisisDetails = () => {
                         />
                     )}
 
-                    <TerminateCrisisDialog 
-                        isOpen={isTerminateModalOpen} 
-                        onClose={() => setIsTerminateModalOpen(false)} 
+                                        <TerminateCrisisDialog
+                        isOpen={isTerminateModalOpen}
+                        onClose={() => setIsTerminateModalOpen(false)}
                         onConfirm={handleTerminateCrisis}
-                        crisisStartDate={crisis.startDate} 
+                        mode="terminate"
+                        dialogTitle="Terminer la crise"
+                        dateLabel="Date et heure de fin"
+                        initialDateISO={new Date().toISOString()}
+                        minConstraintDateISO={crisis.startDate}
                     />
+
+                    {isEditStartDateModalOpen && (
+                        <TerminateCrisisDialog
+                            isOpen={isEditStartDateModalOpen}
+                            onClose={() => setIsEditStartDateModalOpen(false)}
+                            onConfirm={handleUpdateStartDate}
+                            mode="editStartDate" // Important: on spécifie le mode
+                            dialogTitle="Modifier la date de début"
+                            dateLabel="Nouvelle date et heure de début"
+                            initialDateISO={crisis.startDate}
+                            maxConstraintDateISO={crisis.endDate} // La date de début ne peut pas dépasser la date de fin
+                        />
+                    )}
                 </>
             )}
         </PrivateLayout>
