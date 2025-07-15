@@ -148,7 +148,7 @@ const TreatmentsPage = () => {
                                                     <span className="text-sm">Quantité:</span>
                                                 </div>
                                                 <span className="font-medium">{medication.quantity}</span>
-                                                <span className="text-sm">/{medication.periodQuantity.toLowerCase()}</span>
+                                                                                                {medication.periodQuantity && <span className="text-sm">/{medication.periodQuantity.toLowerCase()}</span>}
                                             </div>
                                         )}
                                         
@@ -159,7 +159,7 @@ const TreatmentsPage = () => {
                                                     <span className="text-sm">Durée:</span>
                                                 </div>
                                                 <span className="font-medium">{medication.duration}</span>
-                                                <span className="text-sm">{medication.periodDuration.toLowerCase()}(s)</span>
+                                                {medication.periodDuration && <span className="text-sm">{medication.periodDuration.toLowerCase()}(s)</span>}
                                             </div>
                                         )}
                                         {medication.interval && (
@@ -179,7 +179,7 @@ const TreatmentsPage = () => {
                                                     <span className="text-sm">Max:</span>
                                                 </div>
                                                 <span className="font-medium">{medication.maximum}</span>
-                                                <span className="text-sm">/{medication.periodMaximum.toLowerCase()}</span>
+                                                {medication.periodMaximum && <span className="text-sm">/{medication.periodMaximum.toLowerCase()}</span>}
                                             </div>
                                         )}
                                     </div>

@@ -10,8 +10,9 @@ const PERIOD_OPTIONS = [
     { value: 'ANNEE', label: 'An' }
 ];
 
-export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, crisisId }) => {
+export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, crisisId, initialData = null }) => {
     const { get } = useApi();
+        const isEditMode = !!initialData;
     const [mode, setMode] = useState('select'); // 'select' | 'create'
     const [treatments, setTreatments] = useState([]);
     const [selectedTreatmentId, setSelectedTreatmentId] = useState('');
@@ -31,38 +32,46 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
     const [isTreatment, setIsTreatment] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        if (isOpen && mode === 'select') {
-            const fetchTreatments = async () => {
-                try {
-                    const allMeds = await get('/medications');
-                    setTreatments((allMeds || []).filter(med => med.isTreatment));
-                } catch (e) {
-                    toastr.error('Erreur lors du chargement des traitements');
-                }
-            };
-            fetchTreatments();
-        }
+            useEffect(() => {
+        const fetchTreatments = async () => {
+            try {
+                const allMeds = await get('/medications');
+                setTreatments((allMeds || []).filter(med => med.isTreatment));
+            } catch (e) {
+                toastr.error('Erreur lors du chargement des traitements');
+            }
+        };
+
         if (isOpen) {
-            // Date par défaut : maintenant, bornée si besoin
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            setDate(now.toISOString().slice(0,16));
+            fetchTreatments(); // Toujours charger les traitements pour la liste déroulante
+
+            if (isEditMode) {
+                // Mode édition : on pré-remplit les champs
+                setMode('select');
+                setSelectedTreatmentId(initialData.medication.id);
+                setDate(initialData.dateTimeIntake ? new Date(initialData.dateTimeIntake).toISOString().slice(0, 16) : '');
+            } else {
+                // Mode ajout : on réinitialise
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                setDate(now.toISOString().slice(0, 16));
+                setSelectedTreatmentId('');
+                setMode('select');
+                // Reset des champs de création
+                setMedName('');
+                setDosage('');
+                setQuantity('');
+                setPeriodQuantity('');
+                setDuration('');
+                setPeriodDuration('');
+                setInterval('');
+                setMaximum('');
+                setPeriodMaximum('');
+                setIsAlarm(false);
+                setIsTreatment(false);
+            }
         }
-        // Reset
-        setSelectedTreatmentId('');
-        setMedName('');
-        setDosage('');
-        setQuantity('');
-        setPeriodQuantity('');
-        setDuration('');
-        setPeriodDuration('');
-        setInterval('');
-        setMaximum('');
-        setPeriodMaximum('');
-        setIsAlarm(false);
-        setIsTreatment(false);
-    }, [isOpen, mode, get]);
+    }, [isOpen, isEditMode, initialData, get]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -107,7 +116,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-gray-800 rounded-lg w-full max-w-md mx-4 p-6 relative">
                 
-                <h2 className="text-2xl font-bold text-white text-center mb-6">Ajouter un médicament</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">{isEditMode ? 'Modifier la prise' : 'Ajouter un médicament'}</h2>
                 <div className="flex space-x-4 justify-center mb-6">
                     <button
                         className={`px-3 py-1 rounded-md text-sm font-semibold transition-all duration-200 ${mode === 'select' ? 'bg-teal-600 text-white scale-105' : 'bg-gray-700 text-white/60'}`}
@@ -132,11 +141,12 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                                 className="w-full mb-4 p-2 rounded bg-gray-700 text-white"
                                 value={selectedTreatmentId}
                                 onChange={e => setSelectedTreatmentId(e.target.value)}
+                                disabled={mode === 'create'}
                                 required
                             >
                                 <option value="">-- Sélectionnez --</option>
                                 {treatments.map(med => (
-                                    <option key={med.id} value={med.id}>{med.name} {med.dosage ? `(${med.dosage})` : ''}</option>
+                                                                        <option key={med.id} value={med.id}>{med.name} {med.dosage ? `(${med.dosage})` : ''}</option>
                                 ))}
                             </select>
                         </>
@@ -176,7 +186,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                                     <label className="block text-white mb-1">par</label>
                                     <select
                                         className="w-full p-2 rounded bg-gray-700 text-white"
-                                        value={periodQuantity}
+                                        value={periodQuantity || ''}
                                         onChange={e => setPeriodQuantity(e.target.value)}
                                     >
                                         <option value="">--</option>
@@ -203,7 +213,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                                     <label className="block text-white mb-1">par</label>
                                     <select
                                         className="w-full p-2 rounded bg-gray-700 text-white"
-                                        value={periodDuration}
+                                        value={periodDuration || ''}
                                         onChange={e => setPeriodDuration(e.target.value)}
                                     >
                                         <option value="">--</option>
@@ -240,7 +250,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                                     <label className="block text-white mb-1">par</label>
                                     <select
                                         className="w-full p-2 rounded bg-gray-700 text-white"
-                                        value={periodMaximum}
+                                        value={periodMaximum || ''}
                                         onChange={e => setPeriodMaximum(e.target.value)}
                                     >
                                         <option value="">--</option>
@@ -288,7 +298,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                     <div className="flex justify-end gap-4 mt-4">
                         <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-500">Annuler</button>
                         <button type="submit" className="px-4 py-2 rounded bg-teal-600 text-white hover:bg-teal-500" disabled={isLoading}>
-                            {isLoading ? 'Enregistrement...' : 'Ajouter'}
+                            {isLoading ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Ajouter')}
                         </button>
                     </div>
                 </form>

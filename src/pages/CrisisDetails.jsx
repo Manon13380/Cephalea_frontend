@@ -41,7 +41,8 @@ const CrisisDetails = () => {
     const [selectedTrigger, setSelectedTrigger] = useState(null);
     const [isDeleteTriggerModalOpen, setIsDeleteTriggerModalOpen] = useState(false);
     // Ajout pour le dialog médicament
-    const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false);
+        const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false);
+    const [editingMedication, setEditingMedication] = useState(null);
     const [isDeleteMedicationModalOpen, setIsDeleteMedicationModalOpen] = useState(false);
     const [selectedMedication, setSelectedMedication] = useState(null);
 
@@ -185,36 +186,76 @@ const CrisisDetails = () => {
 
     const handleSaveMedication = async (medicationData) => {
         try {
-            let linkedMedication;
-            if (medicationData.name) {
-                const { dateTimeIntake, reminderEnabled, addToTreatments, ...otherMedicationFields } = medicationData;
-                const newMedicationData = {
-                    ...otherMedicationFields,
-                    reminderEnabled: !!reminderEnabled,
-                    addToTreatments: !!addToTreatments,
-                    isDelete: false
-                };
+            if (editingMedication) {
+                // Cas 1: On est en mode édition ET on crée un nouveau médicament à la volée.
+                if (medicationData.name) {
+                    const { dateTimeIntake, ...newMedicationData } = medicationData;
+                    const newMedication = await post('/medications', newMedicationData);
+                    
+                    const updatedCrisisMed = await update(`/crisis/${id}/crisisMedications/${editingMedication.id}?medicationId=${newMedication.id}`, {
+                        dateTimeIntake: dateTimeIntake,
+                    });
+
+                    setCrisis(prev => ({
+                        ...prev,
+                        crisisMedication: prev.crisisMedication.map(med =>
+                            med.id === editingMedication.id ? updatedCrisisMed : med
+                        )
+                    }));
+                    toastr.success('Nouveau traitement créé et prise mise à jour !');
+                } else {
+                // Cas 2: On est en mode édition et on modifie simplement la prise (date ou sélection d'un autre trt existant).
+                    const updatedCrisisMed = await update(`/crisis/${id}/crisisMedications/${editingMedication.id}?medicationId=${medicationData.medicationId}`, {
+                        dateTimeIntake: medicationData.dateTimeIntake,
+                    });
+
+                    setCrisis(prev => ({
+                        ...prev,
+                        crisisMedication: prev.crisisMedication.map(med =>
+                            med.id === editingMedication.id ? updatedCrisisMed : med
+                        )
+                    }));
+                    toastr.success('Prise de médicament modifiée avec succès.');
+                }
+            } else if (medicationData.name) {
+                // Mode création: on crée un nouveau médicament puis on le lie à la crise
+                const { dateTimeIntake, ...newMedicationData } = medicationData;
                 const newMedication = await post('/medications', newMedicationData);
-                linkedMedication = await post(`/crisis/${id}/crisisMedications?medicationId=${newMedication.id}`, { dateTimeIntake });
+                const linkedMedication = await post(`/crisis/${id}/crisisMedications?medicationId=${newMedication.id}`, { dateTimeIntake });
+                
+                const flatMedication = {
+                    medication: linkedMedication.medication,
+                    id: linkedMedication.id,
+                    dateTimeIntake: linkedMedication.dateTimeIntake
+                };
+                setCrisis(prev => ({ ...prev, crisisMedication: [...(prev.crisisMedication || []), flatMedication] }));
+                toastr.success('Médicament créé et ajouté avec succès.');
+
             } else {
-                linkedMedication = await post(`/crisis/${id}/crisisMedications?medicationId=${medicationData.medicationId}`, { dateTimeIntake: medicationData.dateTimeIntake });
+                // Mode ajout: on lie un médicament existant à la crise
+                const linkedMedication = await post(`/crisis/${id}/crisisMedications?medicationId=${medicationData.medicationId}`, { 
+                    dateTimeIntake: medicationData.dateTimeIntake 
+                });
+                const flatMedication = {
+                    medication: linkedMedication.medication,
+                    id: linkedMedication.id,
+                    dateTimeIntake: linkedMedication.dateTimeIntake
+                };
+                setCrisis(prev => ({ ...prev, crisisMedication: [...(prev.crisisMedication || []), flatMedication] }));
+                toastr.success('Médicament ajouté avec succès.');
             }
-            // On aplatit la structure pour correspondre à la liste attendue
-            const flatMedication = {
-                medication: linkedMedication.medication,
-                id: linkedMedication.id,
-                dateTimeIntake: linkedMedication.dateTimeIntake
-            };
-            setCrisis(prev => ({
-                ...prev,
-                crisisMedication: [...(prev.crisisMedication || []), flatMedication]
-            }));
-            toastr.success('Médicament ajouté avec succès.');
-            setIsMedicationDialogOpen(false);
         } catch (error) {
-            console.error("Erreur lors de l'ajout du médicament:", error);
-            toastr.error(apiError || "Erreur lors de l'ajout du médicament.");
+            console.error("Erreur lors de la sauvegarde du médicament:", error);
+            toastr.error("Erreur lors de la sauvegarde du médicament.");
+        } finally {
+            setIsMedicationDialogOpen(false);
+            setEditingMedication(null);
         }
+    };
+
+        const handleEditMedication = (medication) => {
+        setEditingMedication(medication);
+        setIsMedicationDialogOpen(true);
     };
 
     const handleSaveActivity = async (activityData) => {
@@ -386,36 +427,36 @@ const CrisisDetails = () => {
                                 </button>
                             </div>
                             <div className="space-y-3">
-    {crisis.intensities && crisis.intensities.length > 0 ? (
-        [...crisis.intensities]
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
-            .map((intensity) => (
-                <div key={intensity.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/10 p-3 rounded-lg">
-                    <div className="flex items-center gap-x-4 flex-1">
-                        <div className={`w-10 h-10 rounded-full ${getIntensityColor(intensity.number)} flex items-center justify-center flex-shrink-0`}>
-                            <span className="text-white font-bold text-lg">{intensity.number}</span>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-white font-semibold">Intensité de {intensity.number}/10</span>
-                            <span className="text-white/70 text-sm">{formatDate(intensity.date)}</span>
-                        </div>
-                    </div>
-                    <div className="flex justify-end sm:justify-center items-center gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-4 border-white/10">
-                        <button onClick={() => { setSelectedIntensity(intensity); setIsEditIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
-                            <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
-                        </button>
-                        <button onClick={() => { setSelectedIntensity(intensity); setIsDeleteIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Supprimer">
-                            <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
-                        </button>
-                    </div>
-                </div>
-            ))
-    ) : (
-        <div className="text-white/60 text-center py-4">
-            Aucune évolution d'intensité enregistrée
-        </div>
-    )}
-</div>
+                                {crisis.intensities && crisis.intensities.length > 0 ? (
+                                    [...crisis.intensities]
+                                        .sort((a, b) => new Date(a.date) - new Date(b.date))
+                                        .map((intensity) => (
+                                            <div key={intensity.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/10 p-3 rounded-lg">
+                                                <div className="flex items-center gap-x-4 flex-1">
+                                                    <div className={`w-10 h-10 rounded-full ${getIntensityColor(intensity.number)} flex items-center justify-center flex-shrink-0`}>
+                                                        <span className="text-white font-bold text-lg">{intensity.number}</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white font-semibold">Intensité de {intensity.number}/10</span>
+                                                        <span className="text-white/70 text-sm">{formatDate(intensity.date)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end sm:justify-center items-center gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-4 border-white/10">
+                                                    <button onClick={() => { setSelectedIntensity(intensity); setIsEditIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
+                                                        <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                    </button>
+                                                    <button onClick={() => { setSelectedIntensity(intensity); setIsDeleteIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Supprimer">
+                                                        <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                ) : (
+                                    <div className="text-white/60 text-center py-4">
+                                        Aucune évolution d'intensité enregistrée
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Soulagement */}
@@ -478,37 +519,37 @@ const CrisisDetails = () => {
                                 </button>
                             </div>
                             <div className="flex flex-col gap-3">
-    {crisis.crisisMedication && crisis.crisisMedication.length > 0 ? (
-        crisis.crisisMedication.map((med, index) => (
-            <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/10 p-3 rounded-lg">
-                <div className="flex items-center gap-x-4 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-lg">💊</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-white font-semibold">{med.medication.name}{med.medication.dosage ? ` (${med.medication.dosage})` : ''}</span>
-                        <span className="text-white/70 text-sm">{med.dateTimeIntake ? formatDate(med.dateTimeIntake) : ''}</span>
-                    </div>
-                </div>
-                <div className="flex justify-end sm:justify-center items-center gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-4 border-white/10">
-                    <button onClick={() => handleEditMedication(index)} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
-                        <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
-                    </button>
-                    <button onClick={() => {
-                        setSelectedMedication(med);
-                        setIsDeleteMedicationModalOpen(true);
-                    }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Supprimer">
-                        <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
-                    </button>
-                </div>
-            </div>
-        ))
-    ) : (
-        <div className="text-white/60 text-center py-4">
-            Aucun médicament pris
-        </div>
-    )}
-</div>
+                                {crisis.crisisMedication && crisis.crisisMedication.length > 0 ? (
+                                    crisis.crisisMedication.map((med, index) => (
+                                        <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/10 p-3 rounded-lg">
+                                            <div className="flex items-center gap-x-4 flex-1">
+                                                <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-white font-bold text-lg">💊</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-white font-semibold">{med.medication.name}{med.medication.dosage ? ` (${med.medication.dosage})` : ''}</span>
+                                                    <span className="text-white/70 text-sm">{med.dateTimeIntake ? formatDate(med.dateTimeIntake) : ''}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end sm:justify-center items-center gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l sm:pl-4 border-white/10">
+                                                <button onClick={() => handleEditMedication(med)} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
+                                                    <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                </button>
+                                                <button onClick={() => {
+                                                    setSelectedMedication(med);
+                                                    setIsDeleteMedicationModalOpen(true);
+                                                }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Supprimer">
+                                                    <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-white/60 text-center py-4">
+                                        Aucun médicament pris
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Activités impactées */}
@@ -637,13 +678,17 @@ const CrisisDetails = () => {
                         crisisId={id}
                         crisisStartDate={crisis.startDate}
                     />
-                    <MedicationDialog
+                                        <MedicationDialog
                         isOpen={isMedicationDialogOpen}
-                        onClose={() => setIsMedicationDialogOpen(false)}
+                        onClose={() => {
+                            setIsMedicationDialogOpen(false);
+                            setEditingMedication(null);
+                        }}
                         onSave={handleSaveMedication}
                         minDate={crisis.startDate}
                         maxDate={crisis.endDate}
                         crisisId={id}
+                        initialData={editingMedication}
                     />
                     <ReliefDialog
                         isOpen={isReliefDialogOpen}
