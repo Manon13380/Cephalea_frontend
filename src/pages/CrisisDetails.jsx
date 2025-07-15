@@ -783,6 +783,13 @@ const CrisisDetails = () => {
                             message={`Êtes-vous sûr de vouloir supprimer cette mesure d'intensité du ${formatDate(selectedIntensity.date)} ?`}
                         />
                     )}
+
+                    <TerminateCrisisDialog 
+                        isOpen={isTerminateModalOpen} 
+                        onClose={() => setIsTerminateModalOpen(false)} 
+                        onConfirm={handleTerminateCrisis}
+                        crisisStartDate={crisis.startDate} 
+                    />
                 </>
             )}
         </PrivateLayout>
