@@ -8,6 +8,7 @@ import CrisisList from "../pages/CrisisList";
 import CrisisDetails from "../pages/CrisisDetails";
 import TreatmentsPage from "../pages/TreatmentsPage";
 import AddTreatmentForm from '../pages/AddTreatmentForm';
+import CalendarPage from '../pages/CalendarPage';
 
 const Router = () => {
     return (
@@ -21,7 +22,8 @@ const Router = () => {
                     <Route path="/crisis-list" element={<CrisisList />} />
                     <Route path="/crisis/:id" element={<CrisisDetails />} />
                     <Route path="/treatments" element={<TreatmentsPage />} />
-                    <Route path="/add-treatment" element={<AddTreatmentForm />} />
+                                        <Route path="/add-treatment" element={<AddTreatmentForm />} />
+                    <Route path="/calendar" element={<CalendarPage />} />
                 </Route>
             </Routes>
         </>

@@ -99,9 +99,11 @@ const PrivateLayout = ({ children, showPopup}) => {
 
                     {/* Icônes de droite */}
                     <div className="flex sm:gap-10">
-                        <button className="bg-transparent border-none outline-none text-teal-400 hover:text-teal-300 cursor-pointer focus:outline-none">
-                            <FaCalendarAlt size={24} />
-                        </button>
+                                                <Link to="/calendar">
+                            <button className={`bg-transparent border-none outline-none ${location.pathname === '/calendar' ? 'text-white' : 'text-teal-400'} hover:text-teal-300 cursor-pointer focus:outline-none`}>
+                                <FaCalendarAlt size={24} />
+                            </button>
+                        </Link>
                         <Link to="/crisis-list">
                             <button className={`bg-transparent border-none outline-none ${location.pathname === '/crisis-list' ? 'text-white' : 'text-teal-400'} hover:text-teal-300 cursor-pointer focus:outline-none`}>
                                 <FaListUl size={24} />
