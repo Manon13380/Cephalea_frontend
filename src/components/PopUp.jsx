@@ -44,8 +44,8 @@ const PopUp = ({ firstName, onClose }) => {
         });
         return (
             <div id="popup" className="fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-teal-500 text-gray-300 px-6 py-4 rounded-t-lg shadow-lg transition-all duration-500 z-50 w-[100%] max-w-[1024px] h-[300px]">
-                <p className='text-4xl font-bold'>Bonjour <span className="font-italiana text-3xl font-normal">{firstName}</span></p>
-                <p className='mt-5 text-lg'>Une crise de migraine est en cours depuis le {crisisDate}.</p>
+                <p className='text-4xl font-bold text-center'>Bonjour <span className="font-italiana text-3xl font-normal">{firstName}</span></p>
+                <p className='mt-5 text-lg text-center'>Une crise de migraine est en cours depuis le {crisisDate}.</p>
                 <div className="flex flex-col space-y-3 mt-6 items-center">
                     <Link 
                         to={`/crisis/${ongoingCrisis.id}`} 
@@ -68,8 +68,8 @@ const PopUp = ({ firstName, onClose }) => {
   
     return (
         <div id="popup" className="fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-teal-500 text-gray-300 px-6 py-4 rounded-t-lg shadow-lg transition-all duration-500 z-50 w-[100%] max-w-[1024px] h-[300px]">
-            <p className='text-4xl font-bold'>Bonjour <span className="font-italiana text-3xl font-normal">{firstName}</span></p>
-            <p className='mt-5'>Souhaites-tu enregistrer une <br /> nouvelle crise de migraine ?</p>
+            <p className='text-4xl font-bold text-center'>Bonjour <span className="font-italiana text-3xl font-normal">{firstName}</span></p>
+            <p className='mt-5 text-center'>Souhaites-tu enregistrer une <br /> nouvelle crise de migraine ?</p>
             <div className="flex flex-col space-y-4 mt-6 items-center">
                 <Link 
                     to="/crisis-form" 
