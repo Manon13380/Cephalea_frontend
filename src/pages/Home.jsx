@@ -3,7 +3,7 @@ import PrivateLayout from '../components/PrivateLayout';
 import PopUp from '../components/PopUp';
 import { jwtDecode } from "jwt-decode";
 import { useApi } from '../hooks/useApi';
-import { subDays, format, eachDayOfInterval, subMonths } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
     Chart as ChartJS,
