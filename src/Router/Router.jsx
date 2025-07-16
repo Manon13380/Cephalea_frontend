@@ -9,6 +9,7 @@ import CrisisDetails from "../pages/CrisisDetails";
 import TreatmentsPage from "../pages/TreatmentsPage";
 import AddTreatmentForm from '../pages/AddTreatmentForm';
 import CalendarPage from '../pages/CalendarPage';
+import ProfilePage from '../pages/ProfilePage';
 
 const Router = () => {
     return (
@@ -24,6 +25,7 @@ const Router = () => {
                     <Route path="/treatments" element={<TreatmentsPage />} />
                                         <Route path="/add-treatment" element={<AddTreatmentForm />} />
                     <Route path="/calendar" element={<CalendarPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                 </Route>
             </Routes>
         </>

@@ -148,7 +148,6 @@ const Home = () => {
             (crisis.triggers || []).forEach(trigger => {
                 triggerCounts[trigger.name] = (triggerCounts[trigger.name] || 0) + 1;
             });
-            console.log("crisis.crisisMedication", crisis.crisisMedication);
             (crisis.crisisMedication || []).forEach(med => {
                 const medName = med && med.medication && med.medication.name;
                 if (medName) {

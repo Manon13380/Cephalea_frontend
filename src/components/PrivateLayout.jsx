@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiSettings, FiZap, FiLogOut, FiChevronDown } from 'react-icons/fi';
+import { FiSettings, FiZap, FiLogOut, FiChevronDown, FiUser } from 'react-icons/fi';
 import { FaHome, FaPills, FaCalendarAlt, FaListUl } from 'react-icons/fa';
 import LogoCephalea from '../assets/images/Logo_cephalea.png';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -52,6 +52,10 @@ const PrivateLayout = ({ children, showPopup}) => {
                         
                         {isMenuOpen && (
                             <div className="absolute right-0 mt-2 w-48 bg-[#2A2A2A] rounded-md shadow-lg py-1 z-50">
+                                <Link to="/profile" className="block px-4 py-2 text-gray-300 hover:text-[#368A7B] hover:bg-[#3A3A3A] flex items-center space-x-2 no-underline w-full text-left">
+                                    <FiUser size={16} />
+                                    <span>Mon Profil</span>
+                                </Link>
                                 <button
                                     onClick={handleLogout}
                                     className="block px-4 py-2 text-gray-300 hover:text-[#368A7B] hover:bg-[#3A3A3A] hover:border-none bg-transparent flex items-center space-x-2 no-underline w-full text-left"
