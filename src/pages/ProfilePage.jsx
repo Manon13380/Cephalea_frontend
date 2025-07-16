@@ -86,7 +86,7 @@ const ProfilePage = () => {
             await remove(`/user/${user.id}`);
             toast.success('Votre compte a été supprimé avec succès.');
             sessionStorage.removeItem('token');
-            navigate('/login');
+            navigate('/');
         } catch (err) {
             toast.error('Impossible de supprimer le compte.');
         } finally {
