@@ -197,16 +197,15 @@ const Home = () => {
             <div className="container mx-auto p-4 md:p-8 text-white">
                 <h1 className="text-3xl text-center font-bold mb-8">Dashboard</h1>
 
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
-                    <span className="text-gray-400 font-semibold">Période :</span>
-                    {[3, 9, 12].map(months => (
-                        <button 
-                            key={months}
-                            onClick={() => setTimeRange(months)}
-                            className={`px-4 py-2 rounded-md font-semibold transition ${timeRange === months ? 'bg-teal-500 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}>
-                            {months} mois
-                        </button>
-                    ))}
+                <div className="flex justify-end mb-8">
+                    <div className="relative">
+                        <select id="time-range-select" value={timeRange} onChange={(e) => setTimeRange(Number(e.target.value))} className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full pl-3 pr-10 py-2.5 transition-all duration-300 ease-in-out appearance-none cursor-pointer hover:bg-gray-700">
+                            <option className="bg-gray-800 text-white" value={3}>3 derniers mois</option>
+                            <option className="bg-gray-800 text-white" value={9}>9 derniers mois</option>
+                            <option className="bg-gray-800 text-white" value={12}>12 derniers mois</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.516 7.548c.436-.446 1.043-.481 1.576 0L10 10.405l2.908-2.857c.533-.481 1.141-.446 1.574 0 .436.445.408 1.197 0 1.615l-3.712 3.648a1.103 1.103 0 01-1.56 0L5.516 9.163c-.408-.418-.436-1.17 0-1.615z"/></svg></div>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
