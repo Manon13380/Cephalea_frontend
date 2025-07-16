@@ -53,15 +53,8 @@ const Home = () => {
     const [triggerData, setTriggerData] = useState(null);
     const [loading, setLoading] = useState(false);
     // Tableau de refs pour tous les graphiques
-    const chartRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
-
-    // Décodage du token et stockage du user
-    // States à déclarer en haut :
-    // const [firstName, setFirstName] = useState('');
-    // const [lastName, setLastName] = useState('');
-    // const [userId, setUserId] = useState('');
-    // const [doctor, setDoctor] = useState('');
-    // const [neurologist, setNeurologist] = useState('');
+    const chartRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()]; // Ajout d'un ref pour le graphique traitements
+    const [treatmentUsageData, setTreatmentUsageData] = useState(null);
 
     useEffect(() => {
         const token = sessionStorage.getItem('token');
@@ -123,6 +116,7 @@ const Home = () => {
 
         const timeOfDayCounts = { 'Matin': 0, 'Après-midi': 0, 'Soir': 0, 'Nuit': 0 };
         const triggerCounts = {};
+        const treatmentCounts = {};
 
         crises.forEach(crisis => {
             const crisisDate = new Date(crisis.startDate);
@@ -153,6 +147,13 @@ const Home = () => {
 
             (crisis.triggers || []).forEach(trigger => {
                 triggerCounts[trigger.name] = (triggerCounts[trigger.name] || 0) + 1;
+            });
+            console.log("crisis.crisisMedication", crisis.crisisMedication);
+            (crisis.crisisMedication || []).forEach(med => {
+                const medName = med && med.medication && med.medication.name;
+                if (medName) {
+                    treatmentCounts[medName] = (treatmentCounts[medName] || 0) + 1;
+                }
             });
         });
 
@@ -202,9 +203,10 @@ const Home = () => {
               }
           ]
       });
-        setMonthlyDurationData({ labels, datasets: [{ label: 'Durée moyenne (heures)', data: sortedMonths.map(m => {
+        setMonthlyDurationData({ labels, datasets: [{ label: 'Durée moyenne (jours)', data: sortedMonths.map(m => {
             const month = monthlyData[m];
-            return month.crisesWithDuration > 0 ? (month.totalDuration / month.crisesWithDuration).toFixed(1) : 0;
+            // Conversion heures → jours (1 jour = 24h)
+            return month.crisesWithDuration > 0 ? (month.totalDuration / month.crisesWithDuration / 24).toFixed(1) : 0;
         }), backgroundColor: 'rgba(59, 130, 246, 0.7)' }] });
         setTimeOfDayData({ labels: Object.keys(timeOfDayCounts), datasets: [{ data: Object.values(timeOfDayCounts), backgroundColor: ['#14b8a6', '#0d9488', '#3b82f6', '#2563eb'], borderColor: '#1f2937', borderWidth: 2 }] });
 
@@ -216,6 +218,45 @@ const Home = () => {
                 data: sortedTriggers.map(t => t[1]), 
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
             }] 
+        });
+
+        // Médicaments : histogramme groupé par mois
+        // 2. On construit { medName: [cptMois1, cptMois2, ...] }
+        const medMonthCounts = {};
+        crises.forEach(crisis => {
+            const crisisDate = new Date(crisis.startDate);
+            const monthKey = format(crisisDate, 'yyyy-MM');
+            (crisis.crisisMedication || []).forEach(med => {
+                const medName = med && med.medication && med.medication.name;
+                if (medName && monthlyData[monthKey]) {
+                    if (!medMonthCounts[medName]) medMonthCounts[medName] = Array(sortedMonths.length).fill(0);
+                    const monthIdx = sortedMonths.indexOf(monthKey);
+                    if (monthIdx !== -1) medMonthCounts[medName][monthIdx]++;
+                }
+            });
+        });
+        // 3. On limite aux 6 médicaments les plus utilisés sur la période
+        const topMeds = Object.entries(medMonthCounts)
+            .map(([name, arr]) => [name, arr.reduce((a, b) => a + b, 0)])
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6)
+            .map(([name]) => name);
+        // 4. Palette de couleurs
+        const palette = [
+            'rgba(59,130,246,0.8)',   // bleu (site)
+            'rgba(20,184,166,0.8)',   // turquoise (site)
+            'rgba(16,185,129,0.8)',   // vert (site)
+            'rgba(139,92,246,0.8)',   // violet (site)
+            'rgba(107,114,128,0.8)',  // gris (site)
+            'rgba(244,63,94,0.8)'     // rose (site)
+        ];
+        setTreatmentUsageData({
+            labels: sortedMonths.map(monthKey => format(new Date(monthKey), 'MMM yyyy', { locale: fr })),
+            datasets: topMeds.map((medName, i) => ({
+                label: medName,
+                data: medMonthCounts[medName],
+                backgroundColor: palette[i % palette.length],
+            }))
         });
     };
 
@@ -251,7 +292,8 @@ const Home = () => {
             "Évolution de l'intensité par crise",
             'Durée moyenne par mois (en heures)',
             'Répartition par moment de la journée',
-            'Top 3 des déclencheurs'
+            'Top 3 des déclencheurs',
+            'Nombre de prises par médicament'
         ];
         pdf.setFontSize(13);
         // Pour chaque graphique, on vérifie la place restante avant d'ajouter le suivant
@@ -313,26 +355,26 @@ const Home = () => {
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[0]}>
     <h2 className="text-xl font-semibold mb-4 text-center">Nombre de migraines par mois</h2>
     <div className="relative flex-grow flex items-center justify-center">
-        <div className="w-full h-64 md:h-72">
-            {monthlyCountData ? <Line options={{
-                maintainAspectRatio: false,
-                ...chartOptions,
-                plugins: {
-                    ...chartOptions.plugins,
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'top',
-                        color: '#e5e7eb',
-                        font: {
-                            weight: 'bold',
-                        },
-                        formatter: (value) => {
-                            return value > 0 ? value : '';
-                        }
+        <div className="w-full h-64 md:h-72">{monthlyCountData ? <Line options={{
+            maintainAspectRatio: false,
+            ...chartOptions,
+            plugins: {
+                ...chartOptions.plugins,
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#e5e7eb',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: (value) => {
+                        return value > 0 ? value : '';
                     }
                 }
-            }} data={monthlyCountData} /> : <p>Chargement...</p>}
-        </div>
+            }
+        }} data={monthlyCountData} /> : <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+</div>}</div>
     </div>
 </div>
 
@@ -363,13 +405,75 @@ const Home = () => {
                     }
                 }
             }
-        }} data={intensityEvolutionData} /> : <p>Chargement...</p>}</div>
+        }} data={intensityEvolutionData} /> : <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+</div>}</div>
     </div>
 </div>
 
+                    {/* Chart 6: Nombre de prises par médicament */}
+                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col md:col-span-2" ref={chartRefs[5]}>
+                        <h2 className="text-xl font-semibold mb-4 text-center">Nombre de prises par médicament</h2>
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">
+                                {treatmentUsageData && treatmentUsageData.labels.length > 0 ? (
+                                    <Bar
+                                        data={treatmentUsageData}
+                                        options={{
+                                            ...chartOptions,
+                                            maintainAspectRatio: false,
+                                            indexAxis: 'y', // barres horizontales
+                                            plugins: {
+                                                ...chartOptions.plugins,
+                                                legend: {
+                                                    display: timeRange === 9 || timeRange === 12,
+                                                    position: 'top',
+                                                    labels: {
+                                                        color: '#e5e7eb',
+                                                        font: { weight: 'bold' }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    anchor: 'center',
+                                                    align: 'center',
+                                                    color: '#fff',
+                                                    font: { weight: 'bold', size: 13 },
+                                                    formatter: function(value, context) {
+                                                        if (value > 0) {
+                                                            if (timeRange === 9 || timeRange === 12) {
+                                                                return value;
+                                                            }
+                                                            return `${context.dataset.label} (${value})`;
+                                                        }
+                                                        return '';
+                                                    }
+                                                }
+                                            },
+                                            scales: {
+                                                x: { ...chartOptions.scales.x, grid: { display: false } },
+                                                y: {
+                                                    ...chartOptions.scales.y,
+                                                    grid: { display: false },
+                                                    beginAtZero: true,
+                                                    precision: 0,
+                                                    barThickness: (timeRange === 12) ? 60 : (timeRange === 9 ? 36 : 20), // très épais pour 12 mois, épais pour 9
+                                                    barPercentage: 0.4,
+                                                    categoryPercentage: 0.5
+                                                }
+                                            }
+                                        }}
+                                        plugins={[ChartDataLabels]}
+                                    />
+                                ) : (
+                                    <div className="text-gray-400 text-center">Pas de données</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Chart 3: Durée moyenne par mois (en heures) */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[2]}>
-    <h2 className="text-xl font-semibold mb-4 text-center">Durée moyenne par mois (en heures)</h2>
+    <h2 className="text-xl font-semibold mb-4 text-center">Durée moyenne par mois (en jours)</h2>
     <div className="relative flex-grow flex items-center justify-center">
         <div className="w-full h-64 md:h-72">{monthlyDurationData ? <Bar options={{
             maintainAspectRatio: false,
@@ -388,7 +492,9 @@ const Home = () => {
                     }
                 }
             }
-        }} data={monthlyDurationData} /> : <p>Chargement...</p>}</div>
+        }} data={monthlyDurationData} /> : <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+</div>}</div>
     </div>
 </div>
 
@@ -418,7 +524,9 @@ const Home = () => {
                     }
                 },
                 scales: {}
-            }} data={timeOfDayData} /> : <p>Chargement...</p>}
+            }} data={timeOfDayData} /> : <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+</div>}
         </div>
     </div>
 </div>
@@ -445,9 +553,12 @@ const Home = () => {
             }}
             data={triggerData}
             plugins={[ChartDataLabels]}
-        /> : <p>Chargement...</p>}</div>
+        /> : <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+</div>}</div>
     </div>
 </div>
+
                 </div>
 
                 {showPopup && <PopUp firstName={firstName} onClose={handleClosePopup} />}
