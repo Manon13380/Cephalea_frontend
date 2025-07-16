@@ -465,7 +465,12 @@ const CrisisDetails = () => {
                                                     <button onClick={() => { setSelectedIntensity(intensity); setIsEditIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Modifier">
                                                         <FiEdit className="w-4 h-4 text-white/70 group-hover:text-white" />
                                                     </button>
-                                                    <button onClick={() => { setSelectedIntensity(intensity); setIsDeleteIntensityModalOpen(true); }} className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200" title="Supprimer">
+                                                    <button 
+                                                        onClick={() => { setSelectedIntensity(intensity); setIsDeleteIntensityModalOpen(true); }}
+                                                        className="group p-2 hover:bg-white/20 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        title={crisis.intensities.length <= 1 ? "Impossible de supprimer la dernière intensité" : "Supprimer"}
+                                                        disabled={crisis.intensities.length <= 1}
+                                                    >
                                                         <FiTrash2 className="w-4 h-4 text-white/70 group-hover:text-white" />
                                                     </button>
                                                 </div>
