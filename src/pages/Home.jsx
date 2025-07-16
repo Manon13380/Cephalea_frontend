@@ -37,7 +37,7 @@ ChartJS.register(
 );
 
 const Home = () => {
-    const { get } = useApi();
+    const { get, loading } = useApi();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [userId, setUserId] = useState('');
@@ -51,7 +51,6 @@ const Home = () => {
     const [monthlyDurationData, setMonthlyDurationData] = useState(null);
     const [timeOfDayData, setTimeOfDayData] = useState(null);
     const [triggerData, setTriggerData] = useState(null);
-    const [loading, setLoading] = useState(false);
     // Tableau de refs pour tous les graphiques
     const chartRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()]; // Ajout d'un ref pour le graphique traitements
     const [treatmentUsageData, setTreatmentUsageData] = useState(null);
@@ -98,7 +97,7 @@ const Home = () => {
 
         fetchData();
     }, [userId, get]);
-    
+
     useEffect(() => {
         if (crisesData.length > 0) {
             processChartData(crisesData, timeRange);
@@ -170,53 +169,57 @@ const Home = () => {
         const intensityLabels = [];
         const firstIntensityData = [];
         const lastIntensityData = [];
-      
+
         sortedCrises.forEach(crisis => {
-          if (crisis.intensities?.length > 0) {
-            const sortedIntensities = [...crisis.intensities].sort((a, b) => new Date(a.date) - new Date(b.date));
-            const first = sortedIntensities[0].number;
-            const last = sortedIntensities[sortedIntensities.length - 1].number;
-      
-            intensityLabels.push(format(new Date(crisis.startDate), 'dd/MM/yy'));
-            firstIntensityData.push(first);
-            lastIntensityData.push(last);
-          }
+            if (crisis.intensities?.length > 0) {
+                const sortedIntensities = [...crisis.intensities].sort((a, b) => new Date(a.date) - new Date(b.date));
+                const first = sortedIntensities[0].number;
+                const last = sortedIntensities[sortedIntensities.length - 1].number;
+
+                intensityLabels.push(format(new Date(crisis.startDate), 'dd/MM/yy'));
+                firstIntensityData.push(first);
+                lastIntensityData.push(last);
+            }
         });
-        
-      setIntensityEvolutionData({
-          labels: intensityLabels,
-          datasets: [
-              {
-                  label: 'Intensité de début',
-                  data: firstIntensityData,
-                  backgroundColor: 'rgba(20, 184, 166, 0.7)', 
-                  borderColor: 'rgb(20, 184, 166)',
-                  borderWidth: 1
-              },
-              {
-                  label: 'Intensité de fin',
-                  data: lastIntensityData,
-                  backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                  borderColor: 'rgb(59, 130, 246)',
-                  borderWidth: 1
-              }
-          ]
-      });
-        setMonthlyDurationData({ labels, datasets: [{ label: 'Durée moyenne (jours)', data: sortedMonths.map(m => {
-            const month = monthlyData[m];
-            // Conversion heures → jours (1 jour = 24h)
-            return month.crisesWithDuration > 0 ? (month.totalDuration / month.crisesWithDuration / 24).toFixed(1) : 0;
-        }), backgroundColor: 'rgba(59, 130, 246, 0.7)' }] });
+
+        setIntensityEvolutionData({
+            labels: intensityLabels,
+            datasets: [
+                {
+                    label: 'Intensité de début',
+                    data: firstIntensityData,
+                    backgroundColor: 'rgba(20, 184, 166, 0.7)',
+                    borderColor: 'rgb(20, 184, 166)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Intensité de fin',
+                    data: lastIntensityData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgb(59, 130, 246)',
+                    borderWidth: 1
+                }
+            ]
+        });
+        setMonthlyDurationData({
+            labels, datasets: [{
+                label: 'Durée moyenne (jours)', data: sortedMonths.map(m => {
+                    const month = monthlyData[m];
+                    // Conversion heures → jours (1 jour = 24h)
+                    return month.crisesWithDuration > 0 ? (month.totalDuration / month.crisesWithDuration / 24).toFixed(1) : 0;
+                }), backgroundColor: 'rgba(59, 130, 246, 0.7)'
+            }]
+        });
         setTimeOfDayData({ labels: Object.keys(timeOfDayCounts), datasets: [{ data: Object.values(timeOfDayCounts), backgroundColor: ['#14b8a6', '#0d9488', '#3b82f6', '#2563eb'], borderColor: '#1f2937', borderWidth: 2 }] });
 
         const sortedTriggers = Object.entries(triggerCounts).sort(([, a], [, b]) => b - a).slice(0, 3);
-        setTriggerData({ 
-            labels: sortedTriggers.map(t => t[0]), 
-            datasets: [{ 
-                label: "Nombre d'occurrences", 
-                data: sortedTriggers.map(t => t[1]), 
+        setTriggerData({
+            labels: sortedTriggers.map(t => t[0]),
+            datasets: [{
+                label: "Nombre d'occurrences",
+                data: sortedTriggers.map(t => t[1]),
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
-            }] 
+            }]
         });
 
         // Médicaments : histogramme groupé par mois
@@ -331,91 +334,124 @@ const Home = () => {
                 <h1 className="text-3xl text-center font-bold mb-8">Dashboard</h1>
 
                 <div className="flex justify-end mb-8 gap-2">
-    <div className="relative">
-        <select id="time-range-select" value={timeRange} onChange={(e) => setTimeRange(Number(e.target.value))} className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full pl-3 pr-10 py-2.5 transition-all duration-300 ease-in-out appearance-none cursor-pointer hover:bg-gray-700">
-            <option className="bg-gray-800 text-white" value={3}>3 derniers mois</option>
-            <option className="bg-gray-800 text-white" value={9}>9 derniers mois</option>
-            <option className="bg-gray-800 text-white" value={12}>12 derniers mois</option>
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.516 7.548c.436-.446 1.043-.481 1.576 0L10 10.405l2.908-2.857c.533-.481 1.141-.446 1.574 0 .436.445.408 1.197 0 1.615l-3.712 3.648a1.103 1.103 0 01-1.56 0L5.516 9.163c-.408-.418-.436-1.17 0-1.615z"/></svg></div>
-    </div>
-    <button
-        onClick={handleExportPdf}
-        disabled={loading}
-        className="ml-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-        {loading ? 'Exportation...' : 'Exporter'}
-    </button>
-</div>
+                    <div className="relative">
+                        <select id="time-range-select" value={timeRange} onChange={(e) => setTimeRange(Number(e.target.value))} className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full pl-3 pr-10 py-2.5 transition-all duration-300 ease-in-out appearance-none cursor-pointer hover:bg-gray-700">
+                            <option className="bg-gray-800 text-white" value={3}>3 derniers mois</option>
+                            <option className="bg-gray-800 text-white" value={9}>9 derniers mois</option>
+                            <option className="bg-gray-800 text-white" value={12}>12 derniers mois</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.516 7.548c.436-.446 1.043-.481 1.576 0L10 10.405l2.908-2.857c.533-.481 1.141-.446 1.574 0 .436.445.408 1.197 0 1.615l-3.712 3.648a1.103 1.103 0 01-1.56 0L5.516 9.163c-.408-.418-.436-1.17 0-1.615z" /></svg></div>
+                    </div>
+                    <button
+                        onClick={handleExportPdf}
+                        disabled={loading}
+                        className="ml-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Exportation...' : 'Exporter'}
+                    </button>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                     {/* Chart 1: Nombre de migraines par mois */}
-                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[0]}>
-    <h2 className="text-xl font-semibold mb-4 text-center">Nombre de migraines par mois</h2>
-    <div className="relative flex-grow flex items-center justify-center">
-        <div className="w-full h-64 md:h-72">{monthlyCountData ? <Line options={{
-            maintainAspectRatio: false,
-            ...chartOptions,
-            plugins: {
-                ...chartOptions.plugins,
-                datalabels: {
-                    anchor: 'end',
-                    align: 'top',
-                    color: '#e5e7eb',
-                    font: {
-                        weight: 'bold',
-                    },
-                    formatter: (value) => {
-                        return value > 0 ? value : '';
-                    }
-                }
-            }
-        }} data={monthlyCountData} /> : <div className="flex justify-center items-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-</div>}</div>
-    </div>
-</div>
+                    <div
+                        className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col"
+                        ref={chartRefs[0]}
+                    >
+                        <h2 className="text-xl font-semibold mb-4 text-center">
+                            Nombre de migraines par mois
+                        </h2>
+
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">
+                                {loading ? (
+                                    <div className="flex justify-center items-center h-full">
+                                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-teal-500"></div>
+                                    </div>
+                                ) : monthlyCountData ? (
+                                    <Line
+                                        options={{
+                                            maintainAspectRatio: false,
+                                            ...chartOptions,
+                                            plugins: {
+                                                ...chartOptions.plugins,
+                                                datalabels: {
+                                                    anchor: 'end',
+                                                    align: 'top',
+                                                    color: '#e5e7eb',
+                                                    font: { weight: 'bold' },
+                                                    formatter: (value) => (value > 0 ? value : ''),
+                                                },
+                                            },
+                                        }}
+                                        data={monthlyCountData}
+                                    />
+                                ) : (
+                                    <div className="text-gray-400 text-center h-full flex items-center justify-center">
+                                        Pas de données
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
 
                     {/* Chart 2: Évolution de l'intensité par crise */}
-                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[1]}>
-    <h2 className="text-xl font-semibold mb-4 text-center">Évolution de l'intensité par crise</h2>
-    <div className="relative flex-grow flex items-center justify-center">
-        <div className="w-full h-64 md:h-72">{intensityEvolutionData ? <Bar options={{
-            maintainAspectRatio: false,
-            ...chartOptions,
-            plugins: {
-                legend: { 
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: '#e5e7eb'
-                    }
-                 },
-                 datalabels: {
-                    anchor: 'center',
-                    align: 'center',
-                    color: '#e5e7eb',
-                    font: {
-                        weight: 'bold',
-                    },
-                    formatter: (value) => {
-                        return value > 0 ? value : '';
-                    }
-                }
-            }
-        }} data={intensityEvolutionData} /> : <div className="flex justify-center items-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-</div>}</div>
-    </div>
-</div>
+                    <div
+                        className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col"
+                        ref={chartRefs[1]}
+                    >
+                        <h2 className="text-xl font-semibold mb-4 text-center">
+                            Évolution de l'intensité par crise
+                        </h2>
 
-                    {/* Chart 6: Nombre de prises par médicament */}
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">
+                                {loading ? (
+                                    <div className="flex justify-center items-center h-full">
+                                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-teal-500"></div>
+                                    </div>
+                                ) : intensityEvolutionData ? (
+                                    <Bar
+                                        options={{
+                                            maintainAspectRatio: false,
+                                            ...chartOptions,
+                                            plugins: {
+                                                legend: {
+                                                    display: true,
+                                                    position: 'top',
+                                                    labels: { color: '#e5e7eb' },
+                                                },
+                                                datalabels: {
+                                                    anchor: 'center',
+                                                    align: 'center',
+                                                    color: '#e5e7eb',
+                                                    font: { weight: 'bold' },
+                                                    formatter: (value) => (value > 0 ? value : ''),
+                                                },
+                                            },
+                                        }}
+                                        data={intensityEvolutionData}
+                                    />
+                                ) : (
+                                    <div className="text-gray-400 text-center h-full flex items-center justify-center">
+                                        Pas de données
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chart 3: Nombre de prises par médicament */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col md:col-span-2" ref={chartRefs[5]}>
                         <h2 className="text-xl font-semibold mb-4 text-center">Nombre de prises par médicament</h2>
                         <div className="relative flex-grow flex items-center justify-center">
                             <div className="w-full h-64 md:h-72">
-                                {treatmentUsageData && treatmentUsageData.labels.length > 0 ? (
+                                {loading ? (
+                                    <div className="flex justify-center items-center h-full">
+                                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-teal-500"></div>
+                                    </div>
+                                ) :treatmentUsageData && treatmentUsageData.labels.length > 0 ? (
                                     <Bar
                                         data={treatmentUsageData}
                                         options={{
@@ -437,7 +473,7 @@ const Home = () => {
                                                     align: 'center',
                                                     color: '#fff',
                                                     font: { weight: 'bold', size: 13 },
-                                                    formatter: function(value, context) {
+                                                    formatter: function (value, context) {
                                                         if (value > 0) {
                                                             if (timeRange === 9 || timeRange === 12) {
                                                                 return value;
@@ -470,93 +506,93 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Chart 3: Durée moyenne par mois (en heures) */}
+                    {/* Chart 5: Durée moyenne par mois (en jours) */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[2]}>
-    <h2 className="text-xl font-semibold mb-4 text-center">Durée moyenne par mois (en jours)</h2>
-    <div className="relative flex-grow flex items-center justify-center">
-        <div className="w-full h-64 md:h-72">{monthlyDurationData ? <Bar options={{
-            maintainAspectRatio: false,
-            ...chartOptions,
-            plugins: {
-                ...chartOptions.plugins,
-                datalabels: {
-                    anchor: 'center',
-                    align: 'center',
-                    color: 'white',
-                    font: {
-                        weight: 'bold'
-                    },
-                    formatter: (value) => {
-                        return value > 0 ? value : '';
-                    }
-                }
-            }
-        }} data={monthlyDurationData} /> : <div className="flex justify-center items-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-</div>}</div>
-    </div>
-</div>
+                        <h2 className="text-xl font-semibold mb-4 text-center">Durée moyenne par mois (en jours)</h2>
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">{monthlyDurationData ? <Bar options={{
+                                maintainAspectRatio: false,
+                                ...chartOptions,
+                                plugins: {
+                                    ...chartOptions.plugins,
+                                    datalabels: {
+                                        anchor: 'center',
+                                        align: 'center',
+                                        color: 'white',
+                                        font: {
+                                            weight: 'bold'
+                                        },
+                                        formatter: (value) => {
+                                            return value > 0 ? value : '';
+                                        }
+                                    }
+                                }
+                            }} data={monthlyDurationData} /> : (
+                                <div className="text-gray-400 text-center">Pas de données</div>
+                            )}</div>
+                        </div>
+                    </div>
 
-                    {/* Chart 4: Répartition par moment de la journée */}
+                    {/* Chart 6: Répartition par moment de la journée */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[3]}>
-    <h2 className="text-xl font-semibold mb-4 text-center">Répartition par moment de la journée</h2>
-    <div className="relative flex-grow flex items-center justify-center">
-        <div className="w-64 h-64 md:w-72 md:h-72">
-            {timeOfDayData ? <Doughnut options={{
-                ...chartOptions,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { 
-                            color: '#e5e7eb'
-                        }
-                    },
-                    datalabels: {
-                        color: 'white',
-                        font: {
-                            weight: 'bold'
-                        },
-                        formatter: (value) => {
-                            return value > 0 ? value : '';
-                        }
-                    }
-                },
-                scales: {}
-            }} data={timeOfDayData} /> : <div className="flex justify-center items-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-</div>}
-        </div>
-    </div>
-</div>
+                        <h2 className="text-xl font-semibold mb-4 text-center">Répartition par moment de la journée</h2>
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-64 h-64 md:w-72 md:h-72">
+                                {timeOfDayData ? <Doughnut options={{
+                                    ...chartOptions,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                color: '#e5e7eb'
+                                            }
+                                        },
+                                        datalabels: {
+                                            color: 'white',
+                                            font: {
+                                                weight: 'bold'
+                                            },
+                                            formatter: (value) => {
+                                                return value > 0 ? value : '';
+                                            }
+                                        }
+                                    },
+                                    scales: {}
+                                }} data={timeOfDayData} /> : (
+                                    <div className="text-gray-400 text-center">Pas de données</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
-                    {/* Chart 5: Top 3 des déclencheurs */}
+                    {/* Chart 7: Top 3 des déclencheurs */}
                     <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col md:col-span-2" ref={chartRefs[4]}>
-    <h2 className="text-xl font-semibold mb-4 text-center">Top 3 des déclencheurs</h2>
-    <div className="relative flex-grow flex items-center justify-center">
-        <div className="w-full h-64 md:h-72">{triggerData ? <Bar 
-            options={{
-                ...chartOptions,
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                plugins: {
-                    ...chartOptions.plugins,
-                    datalabels: {
-                        color: '#fff',
-                        anchor: 'center',
-                        align: 'center',
-                        font: { weight: 'bold' },
-                        formatter: (value) => value > 0 ? value : ''
-                    }
-                }
-            }}
-            data={triggerData}
-            plugins={[ChartDataLabels]}
-        /> : <div className="flex justify-center items-center h-64">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-</div>}</div>
-    </div>
-</div>
+                        <h2 className="text-xl font-semibold mb-4 text-center">Top 3 des déclencheurs</h2>
+                        <div className="relative flex-grow flex items-center justify-center">
+                            <div className="w-full h-64 md:h-72">{triggerData ? <Bar
+                                options={{
+                                    ...chartOptions,
+                                    maintainAspectRatio: false,
+                                    indexAxis: 'y',
+                                    plugins: {
+                                        ...chartOptions.plugins,
+                                        datalabels: {
+                                            color: '#fff',
+                                            anchor: 'center',
+                                            align: 'center',
+                                            font: { weight: 'bold' },
+                                            formatter: (value) => value > 0 ? value : ''
+                                        }
+                                    }
+                                }}
+                                data={triggerData}
+                                plugins={[ChartDataLabels]}
+                            /> : (
+                                <div className="text-gray-400 text-center">Pas de données</div>
+                            )}</div>
+                        </div>
+                    </div>
 
                 </div>
 

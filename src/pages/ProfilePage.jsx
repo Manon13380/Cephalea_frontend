@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
-import { FaUserCircle, FaBirthdayCake, FaEnvelope, FaUserMd, FaPencilAlt, FaSave } from 'react-icons/fa';
+import { FaUserCircle, FaBirthdayCake, FaEnvelope, FaUserMd, FaPencilAlt, FaSave, FaTrash } from 'react-icons/fa';
 import { MdCancel } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import PrivateLayout from '../components/PrivateLayout';
 import useApi from '../hooks/useApi';
+import DeleteDialog from '../components/DeleteDialog';
 
 
 
@@ -12,7 +14,9 @@ const ProfilePage = () => {
     const [user, setUser] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editedUser, setEditedUser] = useState(null);
-    const { loading, error, get, update } = useApi();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const { loading, error, get, update, remove } = useApi();
+    const navigate = useNavigate();
 
     const formatDate = (dateStr) => {
         const [year, month, day] = dateStr.split("-");
@@ -73,6 +77,23 @@ const ProfilePage = () => {
         }
     };
 
+    const handleDelete = () => {
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await remove(`/user/${user.id}`);
+            toast.success('Votre compte a été supprimé avec succès.');
+            sessionStorage.removeItem('token');
+            navigate('/login');
+        } catch (err) {
+            toast.error('Impossible de supprimer le compte.');
+        } finally {
+            setIsDeleteDialogOpen(false);
+        }
+    };
+
     if (loading) {
         return (
             <PrivateLayout>
@@ -99,15 +120,26 @@ const ProfilePage = () => {
 
     return (
         <PrivateLayout>
+            <DeleteDialog
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={confirmDelete}
+                info="votre compte"
+            />
             <div className="text-white p-4 md:p-6">
                 <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center">Mon Profil</h1>
                 {user && (
-                    <div className="relative bg-gray-800 bg-opacity-50 rounded-lg shadow-lg p-4 sm:p-8 max-w-lg mx-auto">
+                    <div className="relative bg-white/5  rounded-lg shadow-lg p-4 sm:p-8 max-w-lg mx-auto">
                         {!isEditing ? (
                             <>
-                                <button onClick={handleEditToggle} className="absolute top-2 right-2 md:top-4 md:right-4 p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-full transition-colors">
-                                    <FaPencilAlt className="w-5 h-5 text-white" />
-                                </button>
+                                <div className="absolute top-2 right-2 md:top-4 md:right-4 flex space-x-2">
+                                    <button onClick={handleEditToggle} className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-full transition-colors">
+                                        <FaPencilAlt className="w-5 h-5 text-white" />
+                                    </button>
+                                                                        <button onClick={handleDelete} className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-full transition-colors">
+                                        <FaTrash className="w-5 h-5 text-white" />
+                                    </button>
+                                </div>
                                 <div className="flex flex-col items-center mb-6">
                                     <FaUserCircle className="text-5xl md:text-6xl text-teal-400 mb-4" />
                                     <h2 className="text-2xl md:text-3xl font-bold text-center">{user.firstName} {user.name}</h2>
