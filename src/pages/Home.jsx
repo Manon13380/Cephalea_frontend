@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import PrivateLayout from '../components/PrivateLayout';
 import PopUp from '../components/PopUp';
 import { jwtDecode } from "jwt-decode";
@@ -20,6 +20,8 @@ import {
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { differenceInHours } from 'date-fns';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 ChartJS.register(
     CategoryScale,
@@ -37,6 +39,10 @@ ChartJS.register(
 const Home = () => {
     const { get } = useApi();
     const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [userId, setUserId] = useState('');
+    const [doctor, setDoctor] = useState('');
+    const [neurologist, setNeurologist] = useState('');
     const [showPopup, setShowPopup] = useState(false);
     const [crisesData, setCrisesData] = useState([]);
     const [timeRange, setTimeRange] = useState(3);
@@ -45,31 +51,61 @@ const Home = () => {
     const [monthlyDurationData, setMonthlyDurationData] = useState(null);
     const [timeOfDayData, setTimeOfDayData] = useState(null);
     const [triggerData, setTriggerData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    // Tableau de refs pour tous les graphiques
+    const chartRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
+
+    // Décodage du token et stockage du user
+    // States à déclarer en haut :
+    // const [firstName, setFirstName] = useState('');
+    // const [lastName, setLastName] = useState('');
+    // const [userId, setUserId] = useState('');
+    // const [doctor, setDoctor] = useState('');
+    // const [neurologist, setNeurologist] = useState('');
 
     useEffect(() => {
-        const justConnected = sessionStorage.getItem('justConnected');
         const token = sessionStorage.getItem('token');
-        if (justConnected && token) {
+        if (token) {
             const decodedToken = jwtDecode(token);
             setFirstName(decodedToken.firstName);
+            setLastName(decodedToken.lastName);
+            setUserId(decodedToken.userId || decodedToken.id);
+        }
+
+        const justConnected = sessionStorage.getItem('justConnected');
+        if (justConnected) {
             setShowPopup(true);
             sessionStorage.removeItem('justConnected');
         }
 
         const fetchData = async () => {
+            if (!userId) return; // Ne rien faire si userId n'est pas encore défini
+
+            // Fetch crisis data
             try {
-                const crises = await get('/crisis');
-                if (Array.isArray(crises)) {
-                    setCrisesData(crises);
+                const crisesData = await get('/crisis');
+                if (Array.isArray(crisesData)) {
+                    setCrisesData(crisesData);
                 }
             } catch (error) {
-                console.error("Erreur lors de la récupération des données pour les graphiques:", error);
+                console.error("Erreur lors de la récupération des crises:", error);
+            }
+
+            // Fetch user data
+            try {
+                const userData = await get(`/user/${userId}`);
+                if (userData) {
+                    setDoctor(userData.doctor ? userData.doctor : 'Non renseigné');
+                    setNeurologist(userData.neurologist ? userData.neurologist : 'Non renseigné');
+                }
+            } catch (error) {
+                console.error("Erreur lors de la récupération des informations de l'utilisateur:", error);
             }
         };
 
         fetchData();
-    }, [get]);
-
+    }, [userId, get]);
+    
     useEffect(() => {
         if (crisesData.length > 0) {
             processChartData(crisesData, timeRange);
@@ -176,7 +212,7 @@ const Home = () => {
         setTriggerData({ 
             labels: sortedTriggers.map(t => t[0]), 
             datasets: [{ 
-                label: 'Nombre d\'occurrences', 
+                label: "Nombre d'occurrences", 
                 data: sortedTriggers.map(t => t[1]), 
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
             }] 
@@ -192,143 +228,226 @@ const Home = () => {
         scales: { x: { ticks: { color: '#9ca3af' }, grid: { display: false } }, y: { ticks: { color: '#9ca3af' }, grid: { display: false }, beginAtZero: true } },
     };
 
+    // PDF EXPORT LOGIC
+    const handleExportPdf = async () => {
+        setLoading(true);
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const today = '16/07/2025'; // Date du jour fournie
+        const periodeText = timeRange === 3 ? '3 derniers mois' : timeRange === 9 ? '9 derniers mois' : '12 derniers mois';
+        // HEADER
+        pdf.setFontSize(18);
+        pdf.text('Rapport des crises de migraine', 105, 20, { align: 'center' });
+        pdf.setFontSize(14);
+        pdf.text(`de ${firstName} ${lastName}`, 105, 30, { align: 'center' });
+        pdf.setFontSize(11);
+        pdf.text(`Généré le : ${today}`, 105, 40, { align: 'center' });
+        pdf.text(`Médecin traitant : ${doctor}`, 105, 48, { align: 'center' });
+        pdf.text(`Neurologue : ${neurologist}`, 105, 56, { align: 'center' });
+        pdf.text(`Données basées sur les ${periodeText}`, 105, 64, { align: 'center' });
+        let yPos = 76;
+        // Liste des titres des graphiques (dans l'ordre du dashboard)
+        const chartTitles = [
+            'Nombre de migraines par mois',
+            "Évolution de l'intensité par crise",
+            'Durée moyenne par mois (en heures)',
+            'Répartition par moment de la journée',
+            'Top 3 des déclencheurs'
+        ];
+        pdf.setFontSize(13);
+        // Pour chaque graphique, on vérifie la place restante avant d'ajouter le suivant
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        for (let i = 0; i < chartRefs.length; i++) {
+            // Mesure la hauteur prévue pour ce graphique (titre + image + espace)
+            const chartNode = chartRefs[i].current;
+            let imgHeight = 60, imgWidth = 100; // valeurs par défaut au cas où
+            if (chartNode) {
+                const canvas = await html2canvas(chartNode, { scale: 2, backgroundColor: '#1f2937' });
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                imgWidth = pdfWidth - 100;
+                imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+                // Si on dépasse la page, saut de page
+                if (yPos + imgHeight + 24 > pageHeight) {
+                    pdf.addPage();
+                    yPos = 20;
+                }
+                pdf.text(chartTitles[i], 105, yPos, { align: 'center' });
+                yPos += 6;
+                const x = (pdfWidth - imgWidth) / 2;
+                pdf.addImage(imgData, 'PNG', x, yPos, imgWidth, imgHeight);
+                yPos += imgHeight + 18;
+            }
+        }
+        pdf.save(`rapport-migraines-${lastName}-${today}.pdf`);
+        setLoading(false);
+    };
+
+
     return (
         <PrivateLayout showPopup={showPopup}>
             <div className="container mx-auto p-4 md:p-8 text-white">
                 <h1 className="text-3xl text-center font-bold mb-8">Dashboard</h1>
 
-                <div className="flex justify-end mb-8">
-                    <div className="relative">
-                        <select id="time-range-select" value={timeRange} onChange={(e) => setTimeRange(Number(e.target.value))} className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full pl-3 pr-10 py-2.5 transition-all duration-300 ease-in-out appearance-none cursor-pointer hover:bg-gray-700">
-                            <option className="bg-gray-800 text-white" value={3}>3 derniers mois</option>
-                            <option className="bg-gray-800 text-white" value={9}>9 derniers mois</option>
-                            <option className="bg-gray-800 text-white" value={12}>12 derniers mois</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.516 7.548c.436-.446 1.043-.481 1.576 0L10 10.405l2.908-2.857c.533-.481 1.141-.446 1.574 0 .436.445.408 1.197 0 1.615l-3.712 3.648a1.103 1.103 0 01-1.56 0L5.516 9.163c-.408-.418-.436-1.17 0-1.615z"/></svg></div>
-                    </div>
-                </div>
+                <div className="flex justify-end mb-8 gap-2">
+    <div className="relative">
+        <select id="time-range-select" value={timeRange} onChange={(e) => setTimeRange(Number(e.target.value))} className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full pl-3 pr-10 py-2.5 transition-all duration-300 ease-in-out appearance-none cursor-pointer hover:bg-gray-700">
+            <option className="bg-gray-800 text-white" value={3}>3 derniers mois</option>
+            <option className="bg-gray-800 text-white" value={9}>9 derniers mois</option>
+            <option className="bg-gray-800 text-white" value={12}>12 derniers mois</option>
+        </select>
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.516 7.548c.436-.446 1.043-.481 1.576 0L10 10.405l2.908-2.857c.533-.481 1.141-.446 1.574 0 .436.445.408 1.197 0 1.615l-3.712 3.648a1.103 1.103 0 01-1.56 0L5.516 9.163c-.408-.418-.436-1.17 0-1.615z"/></svg></div>
+    </div>
+    <button
+        onClick={handleExportPdf}
+        disabled={loading}
+        className="ml-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+        {loading ? 'Exportation...' : 'Exporter'}
+    </button>
+</div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                     {/* Chart 1: Nombre de migraines par mois */}
-                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col">
-                        <h2 className="text-xl font-semibold mb-4 text-center">Nombre de migraines par mois</h2>
-                        <div className="relative flex-grow flex items-center justify-center">
-                            <div className="w-full h-64 md:h-72">{monthlyCountData ? <Line options={{
-                                maintainAspectRatio: false,
-                                ...chartOptions,
-                                plugins: {
-                                    ...chartOptions.plugins,
-                                    datalabels: {
-                                        anchor: 'end',
-                                        align: 'top',
-                                        color: '#e5e7eb',
-                                        font: {
-                                            weight: 'bold',
-                                        },
-                                        formatter: (value) => {
-                                            return value > 0 ? value : '';
-                                        }
-                                    }
-                                }
-                            }} data={monthlyCountData} /> : <p>Chargement...</p>}</div>
-                        </div>
-                    </div>
+                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[0]}>
+    <h2 className="text-xl font-semibold mb-4 text-center">Nombre de migraines par mois</h2>
+    <div className="relative flex-grow flex items-center justify-center">
+        <div className="w-full h-64 md:h-72">
+            {monthlyCountData ? <Line options={{
+                maintainAspectRatio: false,
+                ...chartOptions,
+                plugins: {
+                    ...chartOptions.plugins,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        color: '#e5e7eb',
+                        font: {
+                            weight: 'bold',
+                        },
+                        formatter: (value) => {
+                            return value > 0 ? value : '';
+                        }
+                    }
+                }
+            }} data={monthlyCountData} /> : <p>Chargement...</p>}
+        </div>
+    </div>
+</div>
 
                     {/* Chart 2: Évolution de l'intensité par crise */}
-                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col">
-                        <h2 className="text-xl font-semibold mb-4 text-center">Évolution de l'intensité par crise</h2>
-                        <div className="relative flex-grow flex items-center justify-center">
-                            <div className="w-full h-64 md:h-72">{intensityEvolutionData ? <Bar options={{
-                                maintainAspectRatio: false,
-                                ...chartOptions,
-                                plugins: {
-                                    legend: { 
-                                        display: true,
-                                        position: 'top',
-                                        labels: {
-                                            color: '#e5e7eb'
-                                        }
-                                     },
-                                     datalabels: {
-                                        anchor: 'center',
-                                        align: 'center',
-                                        color: '#e5e7eb',
-                                        font: {
-                                            weight: 'bold',
-                                        },
-                                        formatter: (value) => {
-                                            return value > 0 ? value : '';
-                                        }
-                                    }
-                                }
-                            }} data={intensityEvolutionData} /> : <p>Chargement...</p>}</div>
-                        </div>
-                    </div>
+                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[1]}>
+    <h2 className="text-xl font-semibold mb-4 text-center">Évolution de l'intensité par crise</h2>
+    <div className="relative flex-grow flex items-center justify-center">
+        <div className="w-full h-64 md:h-72">{intensityEvolutionData ? <Bar options={{
+            maintainAspectRatio: false,
+            ...chartOptions,
+            plugins: {
+                legend: { 
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#e5e7eb'
+                    }
+                 },
+                 datalabels: {
+                    anchor: 'center',
+                    align: 'center',
+                    color: '#e5e7eb',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: (value) => {
+                        return value > 0 ? value : '';
+                    }
+                }
+            }
+        }} data={intensityEvolutionData} /> : <p>Chargement...</p>}</div>
+    </div>
+</div>
 
                     {/* Chart 3: Durée moyenne par mois (en heures) */}
-                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col">
-                        <h2 className="text-xl font-semibold mb-4 text-center">Durée moyenne par mois (en heures)</h2>
-                        <div className="relative flex-grow flex items-center justify-center">
-                            <div className="w-full h-64 md:h-72">{monthlyDurationData ? <Bar options={{
-                                maintainAspectRatio: false,
-                                ...chartOptions,
-                                plugins: {
-                                    ...chartOptions.plugins,
-                                    datalabels: {
-                                        anchor: 'center',
-                                        align: 'center',
-                                        color: 'white',
-                                        font: {
-                                            weight: 'bold'
-                                        },
-                                        formatter: (value) => {
-                                            return value > 0 ? value : '';
-                                        }
-                                    }
-                                }
-                            }} data={monthlyDurationData} /> : <p>Chargement...</p>}</div>
-                        </div>
-                    </div>
+                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[2]}>
+    <h2 className="text-xl font-semibold mb-4 text-center">Durée moyenne par mois (en heures)</h2>
+    <div className="relative flex-grow flex items-center justify-center">
+        <div className="w-full h-64 md:h-72">{monthlyDurationData ? <Bar options={{
+            maintainAspectRatio: false,
+            ...chartOptions,
+            plugins: {
+                ...chartOptions.plugins,
+                datalabels: {
+                    anchor: 'center',
+                    align: 'center',
+                    color: 'white',
+                    font: {
+                        weight: 'bold'
+                    },
+                    formatter: (value) => {
+                        return value > 0 ? value : '';
+                    }
+                }
+            }
+        }} data={monthlyDurationData} /> : <p>Chargement...</p>}</div>
+    </div>
+</div>
 
                     {/* Chart 4: Répartition par moment de la journée */}
-                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col">
-                        <h2 className="text-xl font-semibold mb-4 text-center">Répartition par moment de la journée</h2>
-                        <div className="relative flex-grow flex items-center justify-center">
-                            <div className="w-64 h-64 md:w-72 md:h-72">
-                                {timeOfDayData ? <Doughnut options={{
-                                    ...chartOptions,
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                        legend: { 
-                                            position: 'bottom', 
-                                            labels: { 
-                                                color: '#e5e7eb'
-                                            }
-                                        },
-                                        datalabels: {
-                                            color: 'white',
-                                            font: {
-                                                weight: 'bold'
-                                            },
-                                            formatter: (value) => {
-                                                return value > 0 ? value : '';
-                                            }
-                                        }
-                                    },
-                                    scales: {}
-                                }} data={timeOfDayData} /> : <p>Chargement...</p>}
-                            </div>
-                        </div>
-                    </div>
+                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col" ref={chartRefs[3]}>
+    <h2 className="text-xl font-semibold mb-4 text-center">Répartition par moment de la journée</h2>
+    <div className="relative flex-grow flex items-center justify-center">
+        <div className="w-64 h-64 md:w-72 md:h-72">
+            {timeOfDayData ? <Doughnut options={{
+                ...chartOptions,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { 
+                            color: '#e5e7eb'
+                        }
+                    },
+                    datalabels: {
+                        color: 'white',
+                        font: {
+                            weight: 'bold'
+                        },
+                        formatter: (value) => {
+                            return value > 0 ? value : '';
+                        }
+                    }
+                },
+                scales: {}
+            }} data={timeOfDayData} /> : <p>Chargement...</p>}
+        </div>
+    </div>
+</div>
 
                     {/* Chart 5: Top 3 des déclencheurs */}
-                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col md:col-span-2">
-                        <h2 className="text-xl font-semibold mb-4 text-center">Top 3 des déclencheurs</h2>
-                        <div className="relative flex-grow flex items-center justify-center">
-                            <div className="w-full h-64 md:h-72">{triggerData ? <Bar options={{...chartOptions, maintainAspectRatio: false, indexAxis: 'y' }} data={triggerData} /> : <p>Chargement...</p>}</div>
-                        </div>
-                    </div>
+                    <div className="bg-white/5 p-4 rounded-lg h-[28rem] md:h-96 mb-8 flex flex-col md:col-span-2" ref={chartRefs[4]}>
+    <h2 className="text-xl font-semibold mb-4 text-center">Top 3 des déclencheurs</h2>
+    <div className="relative flex-grow flex items-center justify-center">
+        <div className="w-full h-64 md:h-72">{triggerData ? <Bar 
+            options={{
+                ...chartOptions,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    ...chartOptions.plugins,
+                    datalabels: {
+                        color: '#fff',
+                        anchor: 'center',
+                        align: 'center',
+                        font: { weight: 'bold' },
+                        formatter: (value) => value > 0 ? value : ''
+                    }
+                }
+            }}
+            data={triggerData}
+            plugins={[ChartDataLabels]}
+        /> : <p>Chargement...</p>}</div>
+    </div>
+</div>
                 </div>
 
                 {showPopup && <PopUp firstName={firstName} onClose={handleClosePopup} />}
