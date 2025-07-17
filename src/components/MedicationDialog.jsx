@@ -31,6 +31,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
     const [isAlarm, setIsAlarm] = useState(false);
     const [isTreatment, setIsTreatment] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDelete, setIsDelete] = useState(false);
 
             useEffect(() => {
         const fetchTreatments = async () => {
@@ -49,7 +50,13 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                 // Mode édition : on pré-remplit les champs
                 setMode('select');
                 setSelectedTreatmentId(initialData.medication.id);
-                setDate(initialData.dateTimeIntake ? new Date(initialData.dateTimeIntake).toISOString().slice(0, 16) : '');
+                if (initialData.dateTimeIntake) {
+                    const localDate = new Date(initialData.dateTimeIntake);
+                    localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+                    setDate(localDate.toISOString().slice(0, 16));
+                } else {
+                    setDate('');
+                }
             } else {
                 // Mode ajout : on réinitialise
                 const now = new Date();
@@ -102,6 +109,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                     periodMaximum,
                     isAlarm,
                     isTreatment,
+                    isDelete,
                     dateTimeIntake: date
                 });
             }
