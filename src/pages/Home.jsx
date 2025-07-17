@@ -51,7 +51,7 @@ const Home = () => {
     const [monthlyDurationData, setMonthlyDurationData] = useState(null);
     const [timeOfDayData, setTimeOfDayData] = useState(null);
     const [triggerData, setTriggerData] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [exportIsLoading, setExportIsLoading] = useState(false);
     // Tableau de refs pour tous les graphiques
     const chartRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()]; // Ajout d'un ref pour le graphique traitements
     const [treatmentUsageData, setTreatmentUsageData] = useState(null);
@@ -274,7 +274,7 @@ const Home = () => {
 
     // PDF EXPORT LOGIC
     const handleExportPdf = async () => {
-        setIsLoading(true);
+        setExportIsLoading(true);
         const pdf = new jsPDF('p', 'mm', 'a4');
         const today =  new Date().toLocaleDateString('fr-FR');
         const periodeText = timeRange === 3 ? '3 derniers mois' : timeRange === 9 ? '9 derniers mois' : '12 derniers mois';
@@ -325,7 +325,7 @@ const Home = () => {
             }
         }
         pdf.save(`rapport-migraines-${lastName}-${today}.pdf`);
-        setIsLoading(false);
+        setExportIsLoading(false);
     };
 
 
@@ -345,10 +345,10 @@ const Home = () => {
                     </div>
                     <button
                         onClick={handleExportPdf}
-                        disabled={isLoading}
+                        disabled={exportIsLoading}
                         className="ml-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? 'Exportation...' : 'Exporter'}
+                        {exportIsLoading ? 'Exportation...' : 'Exporter'}
                     </button>
                 </div>
 
