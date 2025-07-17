@@ -51,6 +51,7 @@ const Home = () => {
     const [monthlyDurationData, setMonthlyDurationData] = useState(null);
     const [timeOfDayData, setTimeOfDayData] = useState(null);
     const [triggerData, setTriggerData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     // Tableau de refs pour tous les graphiques
     const chartRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()]; // Ajout d'un ref pour le graphique traitements
     const [treatmentUsageData, setTreatmentUsageData] = useState(null);
@@ -273,9 +274,9 @@ const Home = () => {
 
     // PDF EXPORT LOGIC
     const handleExportPdf = async () => {
-        setLoading(true);
+        setIsLoading(true);
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const today = '16/07/2025'; // Date du jour fournie
+        const today =  new Date().toLocaleDateString('fr-FR');
         const periodeText = timeRange === 3 ? '3 derniers mois' : timeRange === 9 ? '9 derniers mois' : '12 derniers mois';
         // HEADER
         pdf.setFontSize(18);
@@ -309,7 +310,7 @@ const Home = () => {
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
                 const pdfWidth = pdf.internal.pageSize.getWidth();
-                imgWidth = pdfWidth - 100;
+                imgWidth = pdfWidth - 120; // Réduit la largeur pour réduire la taille globale
                 imgHeight = (imgProps.height * imgWidth) / imgProps.width;
                 // Si on dépasse la page, saut de page
                 if (yPos + imgHeight + 24 > pageHeight) {
@@ -324,7 +325,7 @@ const Home = () => {
             }
         }
         pdf.save(`rapport-migraines-${lastName}-${today}.pdf`);
-        setLoading(false);
+        setIsLoading(false);
     };
 
 
@@ -344,10 +345,10 @@ const Home = () => {
                     </div>
                     <button
                         onClick={handleExportPdf}
-                        disabled={loading}
+                        disabled={isLoading}
                         className="ml-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Exportation...' : 'Exporter'}
+                        {isLoading ? 'Exportation...' : 'Exporter'}
                     </button>
                 </div>
 
