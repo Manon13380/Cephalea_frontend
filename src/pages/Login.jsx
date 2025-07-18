@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import LogoCephalea from '../assets/images/Logo_cephalea.png';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import InputField from "../components/InputField";
@@ -90,9 +90,9 @@ const Login = () => {
           </div>
 
           <div className="text-center">
-            <a href="#" className="text-white/80 text-sm hover:text-white">
+            <Link to="/forgot-password" className="text-white/80 text-sm hover:text-white">
               mot de passe oublié ?
-            </a>
+            </Link>
           </div>
 
           <Button

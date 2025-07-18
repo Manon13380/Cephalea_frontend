@@ -268,17 +268,7 @@ export const MedicationDialog = ({ isOpen, onClose, onSave, minDate, maxDate, cr
                                     </select>
                                 </div>
                             </div>
-                            {/* Alarme */}
-                            <div className="flex items-center mb-2">
-                                <input
-                                    type="checkbox"
-                                    id="isAlarm"
-                                    checked={isAlarm}
-                                    onChange={e => setIsAlarm(e.target.checked)}
-                                    className="mr-2"
-                                />
-                                <label htmlFor="isAlarm" className="text-white">Activer les rappels</label>
-                            </div>
+                    
                             {/* Ajouter à mes traitements */}
                             <div className="flex items-center mb-4">
                                 <input

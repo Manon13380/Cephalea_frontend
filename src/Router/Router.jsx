@@ -1,5 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 import Register from "../pages/Register";
 import Home from "../pages/Home";
 import PrivateRouter from "./PrivateRouter";
@@ -17,13 +19,15 @@ const Router = () => {
             <Routes>
                 <Route path="/" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route element={<PrivateRouter />}>
                     <Route path="/home" element={<Home />} />
                     <Route path="/crisis-form" element={<CrisisForm />} />
                     <Route path="/crisis-list" element={<CrisisList />} />
                     <Route path="/crisis/:id" element={<CrisisDetails />} />
                     <Route path="/treatments" element={<TreatmentsPage />} />
-                                        <Route path="/add-treatment" element={<AddTreatmentForm />} />
+                    <Route path="/add-treatment" element={<AddTreatmentForm />} />
                     <Route path="/calendar" element={<CalendarPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                 </Route>

@@ -241,21 +241,6 @@ const AddTreatmentForm = () => {
                                         </select>
                                     </div>
                                 </div>
-
-                                {/* Alarme */}
-                                <div className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        id="isAlarm"
-                                        name="isAlarm"
-                                        checked={formData.isAlarm}
-                                        onChange={handleChange}
-                                        className="h-4 w-4 text-teal-500 rounded border-white/20 bg-white/5 focus:ring-teal-500"
-                                    />
-                                    <label htmlFor="isAlarm" className="ml-2 block text-sm text-white/80">
-                                        Activer les rappels
-                                    </label>
-                                </div>
                             </div>
                         </div>
                     </div>
