@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 const CrisisForm = () => {
     const [startDate, setStartDate] = useState(getLocalDateTimeString());
-    const [painIntensity, setPainIntensity] = useState('');
+    const [painIntensity, setPainIntensity] = useState('5');
     const token = sessionStorage.getItem("token");
      const navigate = useNavigate(); 
 
@@ -56,19 +56,18 @@ const CrisisForm = () => {
                         required
                         max={getLocalDateTimeString()}
                     />
-                    <label htmlFor="painIntensity" className='block text-center '>Intensité actuelle <br /> de la douleur (0-10) :</label>
-                    <select
-                        id='painIntensity'
+                    <label htmlFor="painIntensity" className='block text-center text-white'>
+                        Intensité de la douleur : <span className="font-bold">{painIntensity}</span>
+                    </label>
+                    <input
+                        id="painIntensity"
+                        type="range"
+                        min="0"
+                        max="10"
                         value={painIntensity}
                         onChange={(e) => setPainIntensity(e.target.value)}
-                        required
-                        size={2}
-                        className='w-full py-2 px-3 rounded bg-transparent border border-white/30 text-white placeholder-white/60 text-center'
-                    >
-                        {[...Array(11)].map((_, index) => (
-                            <option key={index} value={index} className='bg-transparent'>{index}</option>
-                        ))}
-                    </select>
+                        className="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer accent-custom-green"
+                    />
                     <Button type="submit">Enregistrer</Button>
                 </form>
             </div>
