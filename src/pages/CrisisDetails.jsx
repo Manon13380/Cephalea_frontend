@@ -411,10 +411,11 @@ const CrisisDetails = () => {
                                         {!crisis.endDate && (
                                             <button
                                                 onClick={handleOpenTerminateModal}
-                                                className="p-2 hover:bg-white/10 rounded-full transition-all duration-200 hover:scale-110 ml-3"
+                                                className="flex items-center gap-2 bg-custom-green text-white hover:brightness-90 font-semibold py-1 px-3 rounded-lg transition-all duration-200 ml-3"
                                                 title="Terminer cette crise"
                                             >
-                                                <FiCheckSquare className="w-5 h-5 text-white/70 hover:text-white" />
+                                                <FiCheckSquare className="w-5 h-5" />
+                                                <span>Terminer</span>
                                             </button>
                                         )}
                                     </p>
