@@ -116,6 +116,7 @@ const Register = () => {
               placeholder="Prénom*"
               required
             />
+            <label htmlFor="birthDate" className='block w-full text-center text-white'>Date de naissance :</label>
             <InputField
               type="date"
               name="birthDate"

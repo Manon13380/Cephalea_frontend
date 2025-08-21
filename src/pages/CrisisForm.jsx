@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 const CrisisForm = () => {
-    const [startDate, setStartDate] = useState('');
+    const [startDate, setStartDate] = useState(getLocalDateTimeString());
     const [painIntensity, setPainIntensity] = useState('');
     const token = sessionStorage.getItem("token");
      const navigate = useNavigate(); 
