@@ -1,12 +1,49 @@
-# React + Vite
+🎨 Frontend - React
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ce projet est un frontend React entièrement dockerisé.
+Il peut être lancé soit via Docker, soit directement en local avec Node.js.
 
-Currently, two official plugins are available:
+🛠️ Prérequis
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Avant de lancer le projet, assure-toi d’avoir installé :
 
-## Expanding the ESLint configuration
+    Node.js (>= 18)
+    npm
+    ou yarn
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+    Docker
+    Docker Compose
+
+▶️ Lancer le projet avec Docker
+
+Tout est déjà configuré dans le docker-compose.yml.
+Tu peux démarrer avec :
+
+docker-compose up --build
+
+
+👉 Cela va builder et lancer le frontend dans un container Docker.
+
+▶️ Lancer le projet sans Docker (local)
+
+Si tu veux lancer le frontend directement en local :
+
+# Installer les dépendances
+npm install
+# ou
+yarn install
+
+# Lancer le projet
+npm run dev
+# ou
+yarn dev
+
+
+Par défaut, l’application démarre sur :
+👉 http://localhost:5173
+
+⚙️ Configuration
+
+Les variables d’environnement sont définies dans un fichier .env :
+
+VITE_BASE_URL=http://localhost:9090
